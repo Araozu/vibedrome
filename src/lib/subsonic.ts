@@ -159,11 +159,39 @@ export interface Album {
 	genre?: string;
 }
 
+export interface Song {
+	id: string;
+	title: string;
+	album: string;
+	albumId: string;
+	artist: string;
+	artistId: string;
+	track?: number;
+	discNumber?: number;
+	year?: number;
+	genre?: string;
+	duration: number;
+	size: number;
+	suffix: string;
+	contentType: string;
+	bitRate?: number;
+	coverArt?: string;
+}
+
+export interface AlbumDetail extends Album {
+	song: Song[];
+}
+
 interface GetAlbumList2Response {
 	status: string;
 	albumList2: {
 		album: Album[];
 	};
+}
+
+interface GetAlbumResponse {
+	status: string;
+	album: AlbumDetail;
 }
 
 interface PingResponse {
@@ -198,4 +226,21 @@ export async function getAlbumList(
 		offset: String(offset)
 	});
 	return res.albumList2?.album ?? [];
+}
+
+export async function getAlbum(config: ServerConfig, id: string): Promise<AlbumDetail> {
+	const res = await apiRequest<GetAlbumResponse>(config, 'getAlbum', { id });
+	return res.album;
+}
+
+/**
+ * Build an authenticated URL to the `getCoverArt` endpoint.
+ * Returns a full URL string that can be used as an `<img src>`.
+ */
+export function getCoverArtUrl(config: ServerConfig, coverArtId: string, size = 300): string {
+	const base = config.url.replace(/\/+$/, '');
+	const params = buildAuthParams(config.user, config.password);
+	params.set('id', coverArtId);
+	params.set('size', String(size));
+	return `${base}/rest/getCoverArt?${params.toString()}`;
 }

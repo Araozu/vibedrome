@@ -45,6 +45,8 @@
 		"vite": "^8.0.7"
 	},
 	"dependencies": {
+		"@tanstack/svelte-query": "^6.1.16",
+		"@tanstack/svelte-query-devtools": "^6.1.16",
 		"mode-watcher": "^1.1.0"
 	}
 }
