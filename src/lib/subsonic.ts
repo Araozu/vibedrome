@@ -1,18 +1,10 @@
 const CLIENT_NAME = 'Vibedrome';
 const API_VERSION = '1.16.1';
 
-function getConfig() {
-	const url = import.meta.env.VITE_NAVIDROME_URL;
-	const user = import.meta.env.VITE_NAVIDROME_USER;
-	const password = import.meta.env.VITE_NAVIDROME_PASSWORD;
-
-	if (!url || !user || !password) {
-		throw new Error(
-			'Missing Navidrome env vars. Set VITE_NAVIDROME_URL, VITE_NAVIDROME_USER, VITE_NAVIDROME_PASSWORD in .env'
-		);
-	}
-
-	return { url: url.replace(/\/+$/, ''), user, password };
+export interface ServerConfig {
+	url: string;
+	user: string;
+	password: string;
 }
 
 function generateSalt(length = 16): string {
@@ -30,22 +22,17 @@ function generateSalt(length = 16): string {
  * need any extra dependencies (Web Crypto doesn't expose MD5).
  */
 function md5(input: string): string {
-	// Encode input as UTF-8 bytes
 	const bytes = new TextEncoder().encode(input);
 
-	// Pre-processing
 	const bitLen = bytes.length * 8;
-	// Padding: append 0x80, then zeros, then 64-bit length
 	const padLen = (bytes.length % 64 < 56 ? 56 : 120) - (bytes.length % 64);
 	const padded = new Uint8Array(bytes.length + padLen + 8);
 	padded.set(bytes);
 	padded[bytes.length] = 0x80;
-	// Append length in bits as 64-bit LE
 	const view = new DataView(padded.buffer);
 	view.setUint32(padded.length - 8, bitLen >>> 0, true);
 	view.setUint32(padded.length - 4, 0, true);
 
-	// Constants
 	const S = [
 		7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9,
 		14, 20, 5, 9, 14, 20, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 6, 10, 15, 21,
@@ -102,7 +89,6 @@ function md5(input: string): string {
 	}
 
 	function toHex(n: number): string {
-		// Little-endian hex
 		return Array.from(new Uint8Array(new Uint32Array([n]).buffer))
 			.map((b) => b.toString(16).padStart(2, '0'))
 			.join('');
@@ -124,9 +110,13 @@ function buildAuthParams(user: string, password: string): URLSearchParams {
 	});
 }
 
-async function apiRequest<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
-	const { url, user, password } = getConfig();
-	const authParams = buildAuthParams(user, password);
+async function apiRequest<T>(
+	config: ServerConfig,
+	endpoint: string,
+	params?: Record<string, string>
+): Promise<T> {
+	const url = config.url.replace(/\/+$/, '');
+	const authParams = buildAuthParams(config.user, config.password);
 
 	if (params) {
 		for (const [k, v] of Object.entries(params)) {
@@ -183,11 +173,12 @@ interface PingResponse {
 
 // ---------- Public API ----------
 
-export async function ping(): Promise<PingResponse> {
-	return apiRequest<PingResponse>('ping');
+export async function ping(config: ServerConfig): Promise<PingResponse> {
+	return apiRequest<PingResponse>(config, 'ping');
 }
 
 export async function getAlbumList(
+	config: ServerConfig,
 	type:
 		| 'newest'
 		| 'frequent'
@@ -201,7 +192,7 @@ export async function getAlbumList(
 	size = 50,
 	offset = 0
 ): Promise<Album[]> {
-	const res = await apiRequest<GetAlbumList2Response>('getAlbumList2', {
+	const res = await apiRequest<GetAlbumList2Response>(config, 'getAlbumList2', {
 		type,
 		size: String(size),
 		offset: String(offset)

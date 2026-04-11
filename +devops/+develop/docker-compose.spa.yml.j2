@@ -1,0 +1,22 @@
+services:
+  {{ project_name }}-{{ project_service }}-{{ project_stage }}:
+    image: ${{ '{' }}{{ project_name | upper }}_{{ project_service | upper }}_REGISTRY_URL{{ '}' }}:${{ '{' }}{{ project_name | upper }}_{{ project_service | upper }}_VERSION{{ '}' }}
+    container_name: {{ project_name }}-{{ project_service }}-{{ project_stage }}
+    restart: unless-stopped
+    environment:
+      - TZ=America/Lima
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.{{ project_name }}-{{ project_stage }}.rule=Host(`vibedrome.araoz.dev`)"
+      - "traefik.http.routers.{{ project_name }}-{{ project_stage }}.entrypoints=websecure"
+      - "traefik.http.routers.{{ project_name }}-{{ project_stage }}.tls=true"
+      - "traefik.http.routers.{{ project_name }}-{{ project_stage }}.tls.certresolver=araoz-wildcard"
+      - "traefik.http.routers.{{ project_name }}-{{ project_stage }}.tls.domains[0].main=araoz.dev"
+      - "traefik.http.routers.{{ project_name }}-{{ project_stage }}.tls.domains[0].sans=*.araoz.dev"
+      - "traefik.http.services.{{ project_name }}-{{ project_stage }}.loadbalancer.server.port=80"
+
+networks:
+  proxy:
+    external: true
