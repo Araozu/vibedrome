@@ -139,14 +139,12 @@
 						class={getActiveId() === server.id ? 'border-primary/50 ring-2 ring-primary/20' : ''}
 					>
 						<Card.Header>
-							<div class="flex items-center justify-between">
-								<div class="flex items-center gap-3">
-									<div>
-										<Card.Title class="text-sm">{server.name}</Card.Title>
-										<Card.Description>
-											{server.url} &middot; {server.user}
-										</Card.Description>
-									</div>
+							<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+								<div class="min-w-0">
+									<Card.Title class="text-sm">{server.name}</Card.Title>
+									<Card.Description class="truncate">
+										{server.url} &middot; {server.user}
+									</Card.Description>
 								</div>
 								<div class="flex items-center gap-1">
 									{#if getActiveId() !== server.id}
