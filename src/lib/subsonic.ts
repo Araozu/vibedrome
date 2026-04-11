@@ -182,6 +182,22 @@ export interface AlbumDetail extends Album {
 	song: Song[];
 }
 
+export interface Artist {
+	id: string;
+	name: string;
+	albumCount: number;
+	coverArt?: string;
+}
+
+export interface ArtistDetail extends Artist {
+	album: Album[];
+}
+
+interface ArtistIndex {
+	name: string;
+	artist: Artist[];
+}
+
 interface GetAlbumList2Response {
 	status: string;
 	albumList2: {
@@ -192,6 +208,18 @@ interface GetAlbumList2Response {
 interface GetAlbumResponse {
 	status: string;
 	album: AlbumDetail;
+}
+
+interface GetArtistsResponse {
+	status: string;
+	artists: {
+		index: ArtistIndex[];
+	};
+}
+
+interface GetArtistResponse {
+	status: string;
+	artist: ArtistDetail;
 }
 
 interface PingResponse {
@@ -231,6 +259,17 @@ export async function getAlbumList(
 export async function getAlbum(config: ServerConfig, id: string): Promise<AlbumDetail> {
 	const res = await apiRequest<GetAlbumResponse>(config, 'getAlbum', { id });
 	return res.album;
+}
+
+export async function getArtists(config: ServerConfig): Promise<Artist[]> {
+	const res = await apiRequest<GetArtistsResponse>(config, 'getArtists');
+	const indexes = res.artists?.index ?? [];
+	return indexes.flatMap((idx) => idx.artist ?? []);
+}
+
+export async function getArtist(config: ServerConfig, id: string): Promise<ArtistDetail> {
+	const res = await apiRequest<GetArtistResponse>(config, 'getArtist', { id });
+	return res.artist;
 }
 
 /**
