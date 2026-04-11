@@ -35,11 +35,12 @@
 		{:else}
 			<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 				{#each query.data as artist (artist.id)}
+					{@const server = getActiveServer()}
 					<a href="/artists/{artist.id}" class="group flex flex-col items-center space-y-2">
 						<div class="relative aspect-square w-full overflow-hidden rounded-full bg-muted">
-							{#if artist.coverArt && getActiveServer()}
+							{#if artist.coverArt && server}
 								<img
-									src={getCoverArtUrl(getActiveServer()!, artist.coverArt, 300)}
+									src={getCoverArtUrl(server, artist.coverArt, 300)}
 									alt={artist.name}
 									class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
 									loading="lazy"

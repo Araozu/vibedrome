@@ -56,11 +56,12 @@
 			{:else}
 				<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 					{#each recentQuery.data as album (album.id)}
+						{@const server = getActiveServer()}
 						<a href="/albums/{album.id}" class="group space-y-2">
 							<div class="relative aspect-square overflow-hidden rounded-lg bg-muted">
-								{#if album.coverArt && getActiveServer()}
+								{#if album.coverArt && server}
 									<img
-										src={getCoverArtUrl(getActiveServer()!, album.coverArt, 300)}
+										src={getCoverArtUrl(server, album.coverArt, 300)}
 										alt={album.name}
 										class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
 										loading="lazy"
@@ -107,11 +108,12 @@
 			{:else}
 				<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 					{#each randomQuery.data as album (album.id)}
+						{@const server = getActiveServer()}
 						<a href="/albums/{album.id}" class="group space-y-2">
 							<div class="relative aspect-square overflow-hidden rounded-lg bg-muted">
-								{#if album.coverArt && getActiveServer()}
+								{#if album.coverArt && server}
 									<img
-										src={getCoverArtUrl(getActiveServer()!, album.coverArt, 300)}
+										src={getCoverArtUrl(server, album.coverArt, 300)}
 										alt={album.name}
 										class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
 										loading="lazy"
