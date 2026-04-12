@@ -283,3 +283,15 @@ export function getCoverArtUrl(config: ServerConfig, coverArtId: string, size = 
 	params.set('size', String(size));
 	return `${base}/rest/getCoverArt?${params.toString()}`;
 }
+
+/**
+ * Build an authenticated URL to the `stream` endpoint.
+ * Uses `format=raw` so the server sends the original file without re-encoding.
+ */
+export function getStreamUrl(config: ServerConfig, songId: string): string {
+	const base = config.url.replace(/\/+$/, '');
+	const params = buildAuthParams(config.user, config.password);
+	params.set('id', songId);
+	params.set('format', 'raw');
+	return `${base}/rest/stream?${params.toString()}`;
+}
