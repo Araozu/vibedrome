@@ -13,13 +13,28 @@
 		getHasNext,
 		getHasPrev,
 		getCurrentCoverArtUrl,
-		setExpanded
+		setExpanded,
+		getVolume,
+		isMuted,
+		toggleMute,
+		isShuffle,
+		toggleShuffle,
+		getRepeat,
+		cycleRepeat
 	} from '$lib/player-store.svelte';
 	import PlayIcon from 'phosphor-svelte/lib/Play';
 	import PauseIcon from 'phosphor-svelte/lib/Pause';
 	import SkipForwardIcon from 'phosphor-svelte/lib/SkipForward';
 	import SkipBackIcon from 'phosphor-svelte/lib/SkipBack';
 	import MusicNoteIcon from 'phosphor-svelte/lib/MusicNote';
+	import CoverImage from '$lib/components/CoverImage.svelte';
+	import SpeakerHighIcon from 'phosphor-svelte/lib/SpeakerHigh';
+	import SpeakerLowIcon from 'phosphor-svelte/lib/SpeakerLow';
+	import SpeakerNoneIcon from 'phosphor-svelte/lib/SpeakerNone';
+	import SpeakerSlashIcon from 'phosphor-svelte/lib/SpeakerSlash';
+	import ShuffleIcon from 'phosphor-svelte/lib/Shuffle';
+	import RepeatIcon from 'phosphor-svelte/lib/Repeat';
+	import RepeatOnceIcon from 'phosphor-svelte/lib/RepeatOnce';
 
 	let seeking = $state(false);
 	let seekValue = $state(0);
@@ -94,7 +109,7 @@
 			<button class="flex min-w-0 flex-1 items-center gap-3" onclick={() => setExpanded(true)}>
 				<div class="size-10 shrink-0 overflow-hidden rounded bg-muted">
 					{#if coverUrl}
-						<img src={coverUrl} alt={song.title} class="h-full w-full object-cover" />
+						<CoverImage src={coverUrl} alt={song.title} />
 					{:else}
 						<div class="flex h-full w-full items-center justify-center">
 							<MusicNoteIcon class="size-5 text-muted-foreground" />
@@ -109,6 +124,21 @@
 
 			<!-- Controls -->
 			<div class="flex items-center gap-1">
+				<!-- Shuffle (desktop only) -->
+				<button
+					class={cn(
+						'hidden items-center justify-center rounded-full transition-colors sm:inline-flex sm:size-8',
+						isShuffle()
+							? 'text-primary hover:bg-accent'
+							: 'text-muted-foreground hover:bg-accent hover:text-foreground'
+					)}
+					onclick={toggleShuffle}
+					aria-label="Shuffle"
+					aria-pressed={isShuffle()}
+				>
+					<ShuffleIcon class="size-4" weight={isShuffle() ? 'bold' : 'regular'} />
+				</button>
+
 				<button
 					class={cn(
 						'inline-flex size-9 items-center justify-center rounded-full transition-colors',
@@ -144,11 +174,46 @@
 				>
 					<SkipForwardIcon class="size-5" weight="fill" />
 				</button>
+
+				<!-- Repeat (desktop only) -->
+				<button
+					class={cn(
+						'hidden items-center justify-center rounded-full transition-colors sm:inline-flex sm:size-8',
+						getRepeat() !== 'off'
+							? 'text-primary hover:bg-accent'
+							: 'text-muted-foreground hover:bg-accent hover:text-foreground'
+					)}
+					onclick={cycleRepeat}
+					aria-label="Repeat: {getRepeat()}"
+				>
+					{#if getRepeat() === 'one'}
+						<RepeatOnceIcon class="size-4" weight="bold" />
+					{:else}
+						<RepeatIcon class="size-4" weight={getRepeat() === 'all' ? 'bold' : 'regular'} />
+					{/if}
+				</button>
 			</div>
 
-			<!-- Time (desktop only) -->
-			<div class="hidden w-24 text-right text-xs text-muted-foreground tabular-nums sm:block">
-				{formatTime(getCurrentTime())} / {formatTime(getDuration())}
+			<!-- Volume + Time (desktop only) -->
+			<div class="hidden items-center gap-2 sm:flex">
+				<button
+					class="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+					onclick={toggleMute}
+					aria-label={isMuted() ? 'Unmute' : 'Mute'}
+				>
+					{#if isMuted() || getVolume() === 0}
+						<SpeakerSlashIcon class="size-4" />
+					{:else if getVolume() < 0.33}
+						<SpeakerNoneIcon class="size-4" />
+					{:else if getVolume() < 0.66}
+						<SpeakerLowIcon class="size-4" />
+					{:else}
+						<SpeakerHighIcon class="size-4" />
+					{/if}
+				</button>
+				<div class="w-20 text-right text-xs text-muted-foreground tabular-nums">
+					{formatTime(getCurrentTime())} / {formatTime(getDuration())}
+				</div>
 			</div>
 		</div>
 	</div>

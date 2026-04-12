@@ -110,6 +110,25 @@ function buildAuthParams(user: string, password: string): URLSearchParams {
 	});
 }
 
+/**
+ * Build auth params with a **deterministic** salt derived from the server
+ * identity (user + url). Because the salt never changes for a given server,
+ * URLs produced by getCoverArtUrl / getStreamUrl are stable across calls and
+ * page reloads, allowing the browser to cache the responses normally.
+ */
+function buildStableAuthParams(user: string, password: string, url: string): URLSearchParams {
+	const salt = md5(user + url);
+	const token = md5(password + salt);
+	return new URLSearchParams({
+		u: user,
+		t: token,
+		s: salt,
+		v: API_VERSION,
+		c: CLIENT_NAME,
+		f: 'json'
+	});
+}
+
 async function apiRequest<T>(
 	config: ServerConfig,
 	endpoint: string,
@@ -278,7 +297,7 @@ export async function getArtist(config: ServerConfig, id: string): Promise<Artis
  */
 export function getCoverArtUrl(config: ServerConfig, coverArtId: string, size = 300): string {
 	const base = config.url.replace(/\/+$/, '');
-	const params = buildAuthParams(config.user, config.password);
+	const params = buildStableAuthParams(config.user, config.password, config.url);
 	params.set('id', coverArtId);
 	params.set('size', String(size));
 	return `${base}/rest/getCoverArt?${params.toString()}`;
@@ -290,7 +309,7 @@ export function getCoverArtUrl(config: ServerConfig, coverArtId: string, size = 
  */
 export function getStreamUrl(config: ServerConfig, songId: string): string {
 	const base = config.url.replace(/\/+$/, '');
-	const params = buildAuthParams(config.user, config.password);
+	const params = buildStableAuthParams(config.user, config.password, config.url);
 	params.set('id', songId);
 	params.set('format', 'raw');
 	return `${base}/rest/stream?${params.toString()}`;

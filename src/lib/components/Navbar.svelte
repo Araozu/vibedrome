@@ -4,6 +4,7 @@
 	import { getServers, getActiveId, setActiveId } from '$lib/server-store.svelte';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import ThemeSelector from '$lib/components/ThemeSelector.svelte';
 	import ServerIcon from 'phosphor-svelte/lib/HardDrives';
 	import ListIcon from 'phosphor-svelte/lib/List';
 	import XIcon from 'phosphor-svelte/lib/X';
@@ -78,6 +79,11 @@
 			</div>
 		{/if}
 
+		<!-- Theme selector (desktop) -->
+		<div class="hidden sm:flex">
+			<ThemeSelector />
+		</div>
+
 		<!-- Mobile menu toggle -->
 		<Button
 			variant="ghost"
@@ -137,6 +143,10 @@
 					</Select.Root>
 				</div>
 			{/if}
+
+			<div class="mt-3 border-t border-border pt-3">
+				<ThemeSelector />
+			</div>
 		</div>
 	{/if}
 </nav>

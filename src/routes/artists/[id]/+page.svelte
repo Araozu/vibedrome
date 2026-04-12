@@ -4,6 +4,7 @@
 	import { artistDetailQuery } from '$lib/queries/artists';
 	import { getActiveServer } from '$lib/server-store.svelte';
 	import { getCoverArtUrl } from '$lib/subsonic';
+	import CoverImage from '$lib/components/CoverImage.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import ArrowLeftIcon from 'phosphor-svelte/lib/ArrowLeft';
@@ -40,11 +41,7 @@
 		<div class="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
 			<div class="size-48 shrink-0 overflow-hidden rounded-full bg-muted shadow-md">
 				{#if artist.coverArt && server}
-					<img
-						src={getCoverArtUrl(server, artist.coverArt, 600)}
-						alt={artist.name}
-						class="h-full w-full object-cover"
-					/>
+					<CoverImage src={getCoverArtUrl(server, artist.coverArt, 600)} alt={artist.name} />
 				{:else}
 					<div class="flex h-full w-full items-center justify-center">
 						<UserIcon class="size-16 text-muted-foreground" />
@@ -73,11 +70,10 @@
 						<a href="/albums/{album.id}" class="group space-y-2">
 							<div class="relative aspect-square overflow-hidden rounded-lg bg-muted">
 								{#if album.coverArt && server}
-									<img
+									<CoverImage
 										src={getCoverArtUrl(server, album.coverArt, 300)}
 										alt={album.name}
-										class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-										loading="lazy"
+										class="transition-transform duration-200 group-hover:scale-105"
 									/>
 								{:else}
 									<div class="flex h-full w-full items-center justify-center">

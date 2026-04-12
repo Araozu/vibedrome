@@ -3,6 +3,7 @@
 	import { albumsQuery } from '$lib/queries/albums';
 	import { getActiveServer } from '$lib/server-store.svelte';
 	import { getCoverArtUrl } from '$lib/subsonic';
+	import CoverImage from '$lib/components/CoverImage.svelte';
 	import MusicNoteIcon from 'phosphor-svelte/lib/MusicNote';
 
 	const recentQuery = createQuery(() => albumsQuery('newest', 10));
@@ -60,11 +61,10 @@
 						<a href="/albums/{album.id}" class="group space-y-2">
 							<div class="relative aspect-square overflow-hidden rounded-lg bg-muted">
 								{#if album.coverArt && server}
-									<img
+									<CoverImage
 										src={getCoverArtUrl(server, album.coverArt, 300)}
 										alt={album.name}
-										class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-										loading="lazy"
+										class="transition-transform duration-200 group-hover:scale-105"
 									/>
 								{:else}
 									<div class="flex h-full w-full items-center justify-center">
@@ -112,11 +112,10 @@
 						<a href="/albums/{album.id}" class="group space-y-2">
 							<div class="relative aspect-square overflow-hidden rounded-lg bg-muted">
 								{#if album.coverArt && server}
-									<img
+									<CoverImage
 										src={getCoverArtUrl(server, album.coverArt, 300)}
 										alt={album.name}
-										class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-										loading="lazy"
+										class="transition-transform duration-200 group-hover:scale-105"
 									/>
 								{:else}
 									<div class="flex h-full w-full items-center justify-center">

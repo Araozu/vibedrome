@@ -296,6 +296,7 @@ Then consume in components:
 - Prefer `query.isPending` / `query.isError` / `query.data` pattern over manual loading state tracking.
 - Invalidate related queries in `onSuccess` callbacks after mutations.
 - No `+page.server.ts`, `+layout.server.ts`, or `+server.ts` files -- all fetching is client-side via TanStack Query.
+- **Use the Preload Pattern** when fetching data for a page. Combine SvelteKit's `+page.ts` `load` (triggered on hover via `data-sveltekit-preload-data`) with TanStack Query's `placeholderData` for instant page transitions. See [`PRELOAD_PATTERN.md`](./PRELOAD_PATTERN.md) for the full pattern and examples.
 
 ### API Types -- openapi-typescript
 

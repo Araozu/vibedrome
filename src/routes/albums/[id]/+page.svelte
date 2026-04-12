@@ -4,6 +4,7 @@
 	import { albumDetailQuery } from '$lib/queries/albums';
 	import { getActiveServer } from '$lib/server-store.svelte';
 	import { getCoverArtUrl } from '$lib/subsonic';
+	import CoverImage from '$lib/components/CoverImage.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import { playQueue, getCurrentSong, isPlaying } from '$lib/player-store.svelte';
@@ -68,11 +69,7 @@
 		<div class="flex flex-col gap-6 sm:flex-row">
 			<div class="size-48 shrink-0 overflow-hidden rounded-lg bg-muted shadow-md">
 				{#if album.coverArt && server}
-					<img
-						src={getCoverArtUrl(server, album.coverArt, 600)}
-						alt={album.name}
-						class="h-full w-full object-cover"
-					/>
+					<CoverImage src={getCoverArtUrl(server, album.coverArt, 600)} alt={album.name} />
 				{:else}
 					<div class="flex h-full w-full items-center justify-center">
 						<MusicNoteIcon class="size-16 text-muted-foreground" />

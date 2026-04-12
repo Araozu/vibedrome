@@ -17,21 +17,40 @@
 		setExpanded,
 		getQueue,
 		getCurrentIndex,
-		playAt
+		playAt,
+		getVolume,
+		setVolume,
+		isMuted,
+		toggleMute,
+		isShuffle,
+		toggleShuffle,
+		getRepeat,
+		cycleRepeat
 	} from '$lib/player-store.svelte';
 	import PlayIcon from 'phosphor-svelte/lib/Play';
 	import PauseIcon from 'phosphor-svelte/lib/Pause';
 	import SkipForwardIcon from 'phosphor-svelte/lib/SkipForward';
 	import SkipBackIcon from 'phosphor-svelte/lib/SkipBack';
 	import MusicNoteIcon from 'phosphor-svelte/lib/MusicNote';
+	import CoverImage from '$lib/components/CoverImage.svelte';
 	import XIcon from 'phosphor-svelte/lib/X';
 	import QueueIcon from 'phosphor-svelte/lib/Queue';
+	import ShuffleIcon from 'phosphor-svelte/lib/Shuffle';
+	import RepeatIcon from 'phosphor-svelte/lib/Repeat';
+	import RepeatOnceIcon from 'phosphor-svelte/lib/RepeatOnce';
+	import SpeakerHighIcon from 'phosphor-svelte/lib/SpeakerHigh';
+	import SpeakerLowIcon from 'phosphor-svelte/lib/SpeakerLow';
+	import SpeakerNoneIcon from 'phosphor-svelte/lib/SpeakerNone';
+	import SpeakerSlashIcon from 'phosphor-svelte/lib/SpeakerSlash';
 
 	let showQueue = $state(false);
 	let seeking = $state(false);
 	let seekValue = $state(0);
+	let volumeSeeking = $state(false);
+	let volumeSeekValue = $state(0);
 
 	const progress = $derived(getDuration() > 0 ? (getCurrentTime() / getDuration()) * 100 : 0);
+	const volumePercent = $derived(isMuted() ? 0 : getVolume() * 100);
 
 	function handleSeekStart(e: MouseEvent | TouchEvent) {
 		seeking = true;
@@ -57,13 +76,46 @@
 			seek((seekValue / 100) * dur);
 		}
 	}
+
+	function handleVolumeStart(e: MouseEvent | TouchEvent) {
+		volumeSeeking = true;
+		handleVolumeMove(e);
+	}
+
+	function handleVolumeMove(e: MouseEvent | TouchEvent) {
+		if (!volumeSeeking) return;
+		const target = (e.currentTarget ?? e.target) as HTMLElement;
+		const bar = target.closest('[data-volume-bar]') as HTMLElement | null;
+		if (!bar) return;
+		const rect = bar.getBoundingClientRect();
+		const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+		const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+		volumeSeekValue = pct * 100;
+		setVolume(pct);
+	}
+
+	function handleVolumeEnd() {
+		volumeSeeking = false;
+	}
 </script>
 
 <svelte:window
-	onmousemove={handleSeekMove}
-	onmouseup={handleSeekEnd}
-	ontouchmove={handleSeekMove}
-	ontouchend={handleSeekEnd}
+	onmousemove={(e) => {
+		handleSeekMove(e);
+		handleVolumeMove(e);
+	}}
+	onmouseup={() => {
+		handleSeekEnd();
+		handleVolumeEnd();
+	}}
+	ontouchmove={(e) => {
+		handleSeekMove(e);
+		handleVolumeMove(e);
+	}}
+	ontouchend={() => {
+		handleSeekEnd();
+		handleVolumeEnd();
+	}}
 />
 
 {#if isExpanded() && getCurrentSong()}
@@ -142,7 +194,7 @@
 				<div class="w-full max-w-xs overflow-hidden rounded-xl bg-muted shadow-lg sm:max-w-sm">
 					<div class="aspect-square">
 						{#if coverUrl}
-							<img src={coverUrl} alt={song.title} class="h-full w-full object-cover" />
+							<CoverImage src={coverUrl} alt={song.title} />
 						{:else}
 							<div class="flex h-full w-full items-center justify-center">
 								<MusicNoteIcon class="size-24 text-muted-foreground" />
@@ -193,7 +245,22 @@
 			</div>
 
 			<!-- Controls -->
-			<div class="mt-4 flex items-center justify-center gap-4">
+			<div class="mt-4 flex items-center justify-center gap-3">
+				<!-- Shuffle -->
+				<button
+					class={cn(
+						'inline-flex size-10 items-center justify-center rounded-full transition-colors',
+						isShuffle()
+							? 'text-primary hover:bg-accent'
+							: 'text-muted-foreground hover:bg-accent hover:text-foreground'
+					)}
+					onclick={toggleShuffle}
+					aria-label="Shuffle"
+					aria-pressed={isShuffle()}
+				>
+					<ShuffleIcon class="size-5" weight={isShuffle() ? 'bold' : 'regular'} />
+				</button>
+
 				<button
 					class={cn(
 						'inline-flex size-11 items-center justify-center rounded-full transition-colors',
@@ -231,6 +298,64 @@
 				>
 					<SkipForwardIcon class="size-7" weight="fill" />
 				</button>
+
+				<!-- Repeat -->
+				<button
+					class={cn(
+						'inline-flex size-10 items-center justify-center rounded-full transition-colors',
+						getRepeat() !== 'off'
+							? 'text-primary hover:bg-accent'
+							: 'text-muted-foreground hover:bg-accent hover:text-foreground'
+					)}
+					onclick={cycleRepeat}
+					aria-label="Repeat: {getRepeat()}"
+				>
+					{#if getRepeat() === 'one'}
+						<RepeatOnceIcon class="size-5" weight="bold" />
+					{:else}
+						<RepeatIcon class="size-5" weight={getRepeat() === 'all' ? 'bold' : 'regular'} />
+					{/if}
+				</button>
+			</div>
+
+			<!-- Volume -->
+			<div class="mx-auto mt-4 flex w-full max-w-xs items-center gap-2 sm:max-w-sm">
+				<button
+					class="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+					onclick={toggleMute}
+					aria-label={isMuted() ? 'Unmute' : 'Mute'}
+				>
+					{#if isMuted() || getVolume() === 0}
+						<SpeakerSlashIcon class="size-4" />
+					{:else if getVolume() < 0.33}
+						<SpeakerNoneIcon class="size-4" />
+					{:else if getVolume() < 0.66}
+						<SpeakerLowIcon class="size-4" />
+					{:else}
+						<SpeakerHighIcon class="size-4" />
+					{/if}
+				</button>
+				<div
+					data-volume-bar
+					class="relative h-1.5 flex-1 cursor-pointer rounded-full bg-muted"
+					onmousedown={handleVolumeStart}
+					ontouchstart={handleVolumeStart}
+					role="slider"
+					aria-label="Volume"
+					aria-valuenow={Math.round(volumePercent)}
+					aria-valuemin={0}
+					aria-valuemax={100}
+					tabindex={0}
+					onkeydown={(e) => {
+						if (e.key === 'ArrowRight') setVolume(getVolume() + 0.05);
+						if (e.key === 'ArrowLeft') setVolume(getVolume() - 0.05);
+					}}
+				>
+					<div
+						class="pointer-events-none h-full rounded-full bg-primary"
+						style="width: {volumePercent}%"
+					></div>
+				</div>
 			</div>
 		</div>
 	</div>

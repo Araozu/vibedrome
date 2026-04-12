@@ -22,7 +22,10 @@
 </script>
 
 <ModeWatcher />
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<svelte:head>
+	<link rel="icon" href={favicon} />
+	<title>Vibedrome</title>
+</svelte:head>
 
 <QueryClientProvider client={queryClient}>
 	<div class="flex min-h-svh flex-col bg-background text-foreground">

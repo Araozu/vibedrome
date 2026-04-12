@@ -3,6 +3,7 @@
 	import { artistsQuery } from '$lib/queries/artists';
 	import { getActiveServer } from '$lib/server-store.svelte';
 	import { getCoverArtUrl } from '$lib/subsonic';
+	import CoverImage from '$lib/components/CoverImage.svelte';
 	import UserIcon from 'phosphor-svelte/lib/User';
 </script>
 
@@ -39,11 +40,10 @@
 					<a href="/artists/{artist.id}" class="group flex flex-col items-center space-y-2">
 						<div class="relative aspect-square w-full overflow-hidden rounded-full bg-muted">
 							{#if artist.coverArt && server}
-								<img
+								<CoverImage
 									src={getCoverArtUrl(server, artist.coverArt, 300)}
 									alt={artist.name}
-									class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-									loading="lazy"
+									class="transition-transform duration-200 group-hover:scale-105"
 								/>
 							{:else}
 								<div class="flex h-full w-full items-center justify-center">
