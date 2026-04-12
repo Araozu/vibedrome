@@ -57,7 +57,10 @@ function loadAndPlay(song: Song): void {
 	const el = getAudio();
 	el.src = getStreamUrl(server, song.id);
 	el.load();
-	el.play();
+	el.play().catch(() => {
+		// Autoplay may be blocked by browser policy; state will stay paused
+		playing = false;
+	});
 }
 
 // ---- Public API ----
