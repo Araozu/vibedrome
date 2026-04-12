@@ -60,7 +60,7 @@
 									<CoverImage
 										src={getCoverArtUrl(server, artist.coverArt)}
 										alt={artist.name}
-										class="transition-transform duration-200 group-hover:scale-105"
+										class=""
 									/>
 								{:else}
 									<div class="flex h-full w-full items-center justify-center">

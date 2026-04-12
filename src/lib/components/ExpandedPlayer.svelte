@@ -159,38 +159,15 @@
 			</button>
 		</div>
 
-		{#if showQueue}
-			<!-- Queue view -->
-			<div class="flex-1 overflow-y-auto px-4 pb-4">
-				<h2 class="mb-3 text-lg font-semibold text-foreground">Queue</h2>
-				<div class="space-y-0.5">
-					{#each queue as queueSong, i (queueSong.id + '-' + i)}
-						<button
-							class={cn(
-								'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors',
-								i === currentIdx
-									? 'bg-accent text-accent-foreground'
-									: 'text-foreground hover:bg-accent/50'
-							)}
-							onclick={() => playAt(i)}
-						>
-							<span class="w-6 text-right text-xs text-muted-foreground tabular-nums">
-								{i + 1}
-							</span>
-							<div class="min-w-0 flex-1">
-								<p class="truncate">{queueSong.title}</p>
-								<p class="truncate text-xs text-muted-foreground">{queueSong.artist}</p>
-							</div>
-							<span class="text-xs text-muted-foreground tabular-nums">
-								{formatTime(queueSong.duration)}
-							</span>
-						</button>
-					{/each}
-				</div>
-			</div>
-		{:else}
-			<!-- Album art + info -->
-			<div class="flex flex-1 flex-col items-center justify-center gap-6 px-6">
+		<!-- Main content area -->
+		<div class="flex min-h-0 flex-1 flex-row">
+			<!-- Left column: Album art + info (always visible) -->
+			<div
+				class={cn(
+					'flex flex-col items-center justify-center gap-6 px-6',
+					showQueue ? 'w-1/2' : 'w-full'
+				)}
+			>
 				<div class="w-full max-w-xs overflow-hidden rounded-xl bg-muted shadow-lg sm:max-w-sm">
 					<div class="aspect-square">
 						{#if coverUrl}
@@ -211,7 +188,44 @@
 					{/if}
 				</div>
 			</div>
-		{/if}
+
+			<!-- Right column: Queue -->
+			{#if showQueue}
+				<div class="flex w-1/2 flex-col border-l border-border">
+					<div class="px-4 pt-4 pb-2">
+						<h2 class="text-sm font-semibold tracking-wider text-muted-foreground uppercase">
+							Queue
+						</h2>
+					</div>
+					<div class="flex-1 overflow-y-auto px-4 pb-4">
+						<div class="space-y-0.5">
+							{#each queue as queueSong, i (queueSong.id + '-' + i)}
+								<button
+									class={cn(
+										'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors',
+										i === currentIdx
+											? 'bg-accent text-accent-foreground'
+											: 'text-foreground hover:bg-accent/50'
+									)}
+									onclick={() => playAt(i)}
+								>
+									<span class="w-6 text-right text-xs text-muted-foreground tabular-nums">
+										{i + 1}
+									</span>
+									<div class="min-w-0 flex-1">
+										<p class="truncate">{queueSong.title}</p>
+										<p class="truncate text-xs text-muted-foreground">{queueSong.artist}</p>
+									</div>
+									<span class="text-xs text-muted-foreground tabular-nums">
+										{formatTime(queueSong.duration)}
+									</span>
+								</button>
+							{/each}
+						</div>
+					</div>
+				</div>
+			{/if}
+		</div>
 
 		<!-- Seek bar + controls at bottom -->
 		<div class="px-6 pb-8">

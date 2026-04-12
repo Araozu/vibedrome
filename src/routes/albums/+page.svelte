@@ -65,7 +65,7 @@
 									<CoverImage
 										src={getCoverArtUrl(getActiveServer()!, album.coverArt)}
 										alt={album.name}
-										class="transition-transform duration-200 group-hover:scale-105"
+										class=""
 									/>
 								{:else}
 									<div class="flex h-full w-full items-center justify-center">

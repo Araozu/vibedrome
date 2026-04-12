@@ -7,16 +7,6 @@ export interface ServerConfig {
 	password: string;
 }
 
-function generateSalt(length = 16): string {
-	const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-	let salt = '';
-	const values = crypto.getRandomValues(new Uint8Array(length));
-	for (const v of values) {
-		salt += chars[v % chars.length];
-	}
-	return salt;
-}
-
 /**
  * Compute MD5 hex digest. Uses a minimal pure-JS implementation so we don't
  * need any extra dependencies (Web Crypto doesn't expose MD5).
@@ -97,30 +87,17 @@ function md5(input: string): string {
 	return toHex(a0) + toHex(b0) + toHex(c0) + toHex(d0);
 }
 
-function buildAuthParams(user: string, password: string): URLSearchParams {
-	const salt = generateSalt();
-	const token = md5(password + salt);
-	return new URLSearchParams({
-		u: user,
-		t: token,
-		s: salt,
-		v: API_VERSION,
-		c: CLIENT_NAME,
-		f: 'json'
-	});
-}
-
 /**
- * Build auth params with a **deterministic** salt derived from the server
- * identity (user + url). Because the salt never changes for a given server,
- * URLs produced by getCoverArtUrl / getStreamUrl are stable across calls and
- * page reloads, allowing the browser to cache the responses normally.
+ * Build Subsonic auth query params with a **deterministic** salt derived from
+ * the server identity (user + url). Because the salt never changes for a given
+ * server, every URL produced for the same endpoint + params is identical across
+ * calls and page reloads, allowing the browser HTTP cache to work normally.
  */
-function buildStableAuthParams(user: string, password: string, url: string): URLSearchParams {
-	const salt = md5(user + url);
-	const token = md5(password + salt);
+function buildAuthParams(config: ServerConfig): URLSearchParams {
+	const salt = md5(config.user + config.url);
+	const token = md5(config.password + salt);
 	return new URLSearchParams({
-		u: user,
+		u: config.user,
 		t: token,
 		s: salt,
 		v: API_VERSION,
@@ -135,7 +112,7 @@ async function apiRequest<T>(
 	params?: Record<string, string>
 ): Promise<T> {
 	const url = config.url.replace(/\/+$/, '');
-	const authParams = buildAuthParams(config.user, config.password);
+	const authParams = buildAuthParams(config);
 
 	if (params) {
 		for (const [k, v] of Object.entries(params)) {
@@ -297,7 +274,7 @@ export async function getArtist(config: ServerConfig, id: string): Promise<Artis
  */
 export function getCoverArtUrl(config: ServerConfig, coverArtId: string): string {
 	const base = config.url.replace(/\/+$/, '');
-	const params = buildStableAuthParams(config.user, config.password, config.url);
+	const params = buildAuthParams(config);
 	params.set('id', coverArtId);
 	params.set('size', '600');
 	return `${base}/rest/getCoverArt?${params.toString()}`;
@@ -309,7 +286,7 @@ export function getCoverArtUrl(config: ServerConfig, coverArtId: string): string
  */
 export function getStreamUrl(config: ServerConfig, songId: string): string {
 	const base = config.url.replace(/\/+$/, '');
-	const params = buildStableAuthParams(config.user, config.password, config.url);
+	const params = buildAuthParams(config);
 	params.set('id', songId);
 	params.set('format', 'raw');
 	return `${base}/rest/stream?${params.toString()}`;
