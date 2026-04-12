@@ -295,11 +295,11 @@ export async function getArtist(config: ServerConfig, id: string): Promise<Artis
  * Build an authenticated URL to the `getCoverArt` endpoint.
  * Returns a full URL string that can be used as an `<img src>`.
  */
-export function getCoverArtUrl(config: ServerConfig, coverArtId: string, size = 300): string {
+export function getCoverArtUrl(config: ServerConfig, coverArtId: string): string {
 	const base = config.url.replace(/\/+$/, '');
 	const params = buildStableAuthParams(config.user, config.password, config.url);
 	params.set('id', coverArtId);
-	params.set('size', String(size));
+	params.set('size', '600');
 	return `${base}/rest/getCoverArt?${params.toString()}`;
 }
 

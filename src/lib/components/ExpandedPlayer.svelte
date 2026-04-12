@@ -120,7 +120,7 @@
 
 {#if isExpanded() && getCurrentSong()}
 	{@const song = getCurrentSong()!}
-	{@const coverUrl = getCurrentCoverArtUrl(600)}
+	{@const coverUrl = getCurrentCoverArtUrl()}
 	{@const queue = getQueue()}
 	{@const currentIdx = getCurrentIndex()}
 

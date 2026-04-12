@@ -126,10 +126,11 @@ function updateMediaSessionMetadata(song: Song): void {
 	const server = getActiveServer();
 	const artwork: MediaImage[] = [];
 	if (song.coverArt && server) {
+		const src = getCoverArtUrl(server, song.coverArt);
 		artwork.push(
-			{ src: getCoverArtUrl(server, song.coverArt, 96), sizes: '96x96', type: 'image/jpeg' },
-			{ src: getCoverArtUrl(server, song.coverArt, 256), sizes: '256x256', type: 'image/jpeg' },
-			{ src: getCoverArtUrl(server, song.coverArt, 512), sizes: '512x512', type: 'image/jpeg' }
+			{ src, sizes: '96x96', type: 'image/jpeg' },
+			{ src, sizes: '256x256', type: 'image/jpeg' },
+			{ src, sizes: '512x512', type: 'image/jpeg' }
 		);
 	}
 
@@ -313,12 +314,12 @@ export function prev(): void {
 }
 
 /** Get cover art URL for the current song. */
-export function getCurrentCoverArtUrl(size = 300): string | null {
+export function getCurrentCoverArtUrl(): string | null {
 	const song = currentSong;
 	if (!song?.coverArt) return null;
 	const server = getActiveServer();
 	if (!server) return null;
-	return getCoverArtUrl(server, song.coverArt, size);
+	return getCoverArtUrl(server, song.coverArt);
 }
 
 /** Jump to a specific index in the queue. */

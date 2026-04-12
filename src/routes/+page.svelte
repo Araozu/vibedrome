@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { PageProps } from './$types';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { albumsQuery } from '$lib/queries/albums';
 	import { getActiveServer } from '$lib/server-store.svelte';
@@ -6,8 +7,7 @@
 	import CoverImage from '$lib/components/CoverImage.svelte';
 	import MusicNoteIcon from 'phosphor-svelte/lib/MusicNote';
 
-	const recentQuery = createQuery(() => albumsQuery('newest', 10));
-	const randomQuery = createQuery(() => albumsQuery('random', 10));
+	let { data }: PageProps = $props();
 </script>
 
 <div class="space-y-8">
@@ -40,7 +40,7 @@
 				</a>
 			</div>
 
-			{#if recentQuery.isPending}
+			{#await data.recentPromise}
 				<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 					{#each { length: 5 } as _}
 						<div class="space-y-2">
@@ -50,48 +50,67 @@
 						</div>
 					{/each}
 				</div>
-			{:else if recentQuery.isError}
-				<p class="text-sm text-destructive">{recentQuery.error.message}</p>
-			{:else if recentQuery.data.length === 0}
-				<p class="text-sm text-muted-foreground">No albums found.</p>
-			{:else}
-				<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-					{#each recentQuery.data as album (album.id)}
-						{@const server = getActiveServer()}
-						<a href="/albums/{album.id}" class="group space-y-2">
-							<div class="relative aspect-square overflow-hidden rounded-lg bg-muted">
-								{#if album.coverArt && server}
-									<CoverImage
-										src={getCoverArtUrl(server, album.coverArt, 300)}
-										alt={album.name}
-										class="transition-transform duration-200 group-hover:scale-105"
-									/>
-								{:else}
-									<div class="flex h-full w-full items-center justify-center">
-										<MusicNoteIcon class="size-12 text-muted-foreground" />
-									</div>
-								{/if}
+			{:then recentPreloaded}
+				{@const recentQuery = createQuery(() => ({
+					...albumsQuery('newest', 10),
+					placeholderData: recentPreloaded ?? undefined
+				}))}
+
+				{#if recentQuery.isPending}
+					<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+						{#each { length: 5 } as _}
+							<div class="space-y-2">
+								<div class="aspect-square animate-pulse rounded-lg bg-muted"></div>
+								<div class="h-4 w-3/4 animate-pulse rounded bg-muted"></div>
+								<div class="h-3 w-1/2 animate-pulse rounded bg-muted"></div>
 							</div>
-							<div class="min-w-0">
-								<p class="truncate text-sm font-medium text-foreground group-hover:underline">
-									{album.name}
-								</p>
-								<p class="truncate text-xs text-muted-foreground">
-									{album.artist}
-									{#if album.year}&middot; {album.year}{/if}
-								</p>
-							</div>
-						</a>
-					{/each}
-				</div>
-			{/if}
+						{/each}
+					</div>
+				{:else if recentQuery.isError}
+					<p class="text-sm text-destructive">{recentQuery.error.message}</p>
+				{:else if recentQuery.data.length === 0}
+					<p class="text-sm text-muted-foreground">No albums found.</p>
+				{:else}
+					<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+						{#each recentQuery.data as album (album.id)}
+							{@const server = getActiveServer()}
+							<a href="/albums/{album.id}" class="group space-y-2">
+								<div class="relative aspect-square overflow-hidden rounded-lg bg-muted">
+									{#if album.coverArt && server}
+										<CoverImage
+											src={getCoverArtUrl(server, album.coverArt)}
+											alt={album.name}
+											class="transition-transform duration-200 group-hover:scale-105"
+										/>
+									{:else}
+										<div class="flex h-full w-full items-center justify-center">
+											<MusicNoteIcon class="size-12 text-muted-foreground" />
+										</div>
+									{/if}
+								</div>
+								<div class="min-w-0">
+									<p class="truncate text-sm font-medium text-foreground group-hover:underline">
+										{album.name}
+									</p>
+									<p class="truncate text-xs text-muted-foreground">
+										{album.artist}
+										{#if album.year}&middot; {album.year}{/if}
+									</p>
+								</div>
+							</a>
+						{/each}
+					</div>
+				{/if}
+			{:catch error}
+				<p class="text-sm text-destructive">{error.message}</p>
+			{/await}
 		</section>
 
 		<!-- Random Albums -->
 		<section class="space-y-4">
 			<h2 class="text-lg font-semibold text-foreground">Random Picks</h2>
 
-			{#if randomQuery.isPending}
+			{#await data.randomPromise}
 				<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 					{#each { length: 5 } as _}
 						<div class="space-y-2">
@@ -101,41 +120,60 @@
 						</div>
 					{/each}
 				</div>
-			{:else if randomQuery.isError}
-				<p class="text-sm text-destructive">{randomQuery.error.message}</p>
-			{:else if randomQuery.data.length === 0}
-				<p class="text-sm text-muted-foreground">No albums found.</p>
-			{:else}
-				<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-					{#each randomQuery.data as album (album.id)}
-						{@const server = getActiveServer()}
-						<a href="/albums/{album.id}" class="group space-y-2">
-							<div class="relative aspect-square overflow-hidden rounded-lg bg-muted">
-								{#if album.coverArt && server}
-									<CoverImage
-										src={getCoverArtUrl(server, album.coverArt, 300)}
-										alt={album.name}
-										class="transition-transform duration-200 group-hover:scale-105"
-									/>
-								{:else}
-									<div class="flex h-full w-full items-center justify-center">
-										<MusicNoteIcon class="size-12 text-muted-foreground" />
-									</div>
-								{/if}
+			{:then randomPreloaded}
+				{@const randomQuery = createQuery(() => ({
+					...albumsQuery('random', 10),
+					placeholderData: randomPreloaded ?? undefined
+				}))}
+
+				{#if randomQuery.isPending}
+					<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+						{#each { length: 5 } as _}
+							<div class="space-y-2">
+								<div class="aspect-square animate-pulse rounded-lg bg-muted"></div>
+								<div class="h-4 w-3/4 animate-pulse rounded bg-muted"></div>
+								<div class="h-3 w-1/2 animate-pulse rounded bg-muted"></div>
 							</div>
-							<div class="min-w-0">
-								<p class="truncate text-sm font-medium text-foreground group-hover:underline">
-									{album.name}
-								</p>
-								<p class="truncate text-xs text-muted-foreground">
-									{album.artist}
-									{#if album.year}&middot; {album.year}{/if}
-								</p>
-							</div>
-						</a>
-					{/each}
-				</div>
-			{/if}
+						{/each}
+					</div>
+				{:else if randomQuery.isError}
+					<p class="text-sm text-destructive">{randomQuery.error.message}</p>
+				{:else if randomQuery.data.length === 0}
+					<p class="text-sm text-muted-foreground">No albums found.</p>
+				{:else}
+					<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+						{#each randomQuery.data as album (album.id)}
+							{@const server = getActiveServer()}
+							<a href="/albums/{album.id}" class="group space-y-2">
+								<div class="relative aspect-square overflow-hidden rounded-lg bg-muted">
+									{#if album.coverArt && server}
+										<CoverImage
+											src={getCoverArtUrl(server, album.coverArt)}
+											alt={album.name}
+											class="transition-transform duration-200 group-hover:scale-105"
+										/>
+									{:else}
+										<div class="flex h-full w-full items-center justify-center">
+											<MusicNoteIcon class="size-12 text-muted-foreground" />
+										</div>
+									{/if}
+								</div>
+								<div class="min-w-0">
+									<p class="truncate text-sm font-medium text-foreground group-hover:underline">
+										{album.name}
+									</p>
+									<p class="truncate text-xs text-muted-foreground">
+										{album.artist}
+										{#if album.year}&middot; {album.year}{/if}
+									</p>
+								</div>
+							</a>
+						{/each}
+					</div>
+				{/if}
+			{:catch error}
+				<p class="text-sm text-destructive">{error.message}</p>
+			{/await}
 		</section>
 	{/if}
 </div>

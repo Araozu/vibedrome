@@ -76,7 +76,7 @@
 
 {#if getCurrentSong()}
 	{@const song = getCurrentSong()!}
-	{@const coverUrl = getCurrentCoverArtUrl(96)}
+	{@const coverUrl = getCurrentCoverArtUrl()}
 
 	<div
 		class="fixed right-0 bottom-0 left-0 z-40 border-t border-border bg-background/95 backdrop-blur-lg"
