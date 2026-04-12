@@ -6,8 +6,11 @@
 	import { getCoverArtUrl } from '$lib/subsonic';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
+	import { playQueue, getCurrentSong, isPlaying } from '$lib/player-store.svelte';
+	import { cn } from '$lib/utils';
 	import ArrowLeftIcon from 'phosphor-svelte/lib/ArrowLeft';
 	import MusicNoteIcon from 'phosphor-svelte/lib/MusicNote';
+	import SpeakerHighIcon from 'phosphor-svelte/lib/SpeakerHigh';
 
 	const albumId = $derived(page.params.id ?? '');
 	const query = createQuery(() => albumDetailQuery(albumId));
@@ -23,6 +26,18 @@
 		const m = Math.floor((seconds % 3600) / 60);
 		if (h > 0) return `${h} hr ${m} min`;
 		return `${m} min`;
+	}
+
+	function handleTrackClick(
+		songs: typeof query.data extends undefined ? never : NonNullable<typeof query.data>['song'],
+		index: number
+	) {
+		playQueue(songs, index);
+	}
+
+	function isSongActive(songId: string): boolean {
+		const current = getCurrentSong();
+		return current !== null && current.id === songId;
 	}
 </script>
 
@@ -90,15 +105,28 @@
 				<span>Title</span>
 				<span>Duration</span>
 			</div>
-			{#each album.song as song (song.id)}
-				<div
-					class="grid grid-cols-[2rem_1fr_auto] items-center gap-4 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent/50"
+			{#each album.song as song, i (song.id)}
+				{@const active = isSongActive(song.id)}
+				<button
+					class={cn(
+						'grid w-full grid-cols-[2rem_1fr_auto] items-center gap-4 rounded-md px-3 py-2 text-left text-sm transition-colors',
+						active ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'
+					)}
+					onclick={() => handleTrackClick(album.song, i)}
 				>
-					<span class="text-right text-xs text-muted-foreground tabular-nums">
-						{song.track ?? '-'}
+					<span class="text-right text-xs tabular-nums">
+						{#if active && isPlaying()}
+							<SpeakerHighIcon class="ml-auto size-4 text-primary" weight="fill" />
+						{:else}
+							<span class={active ? 'text-primary' : 'text-muted-foreground'}>
+								{song.track ?? '-'}
+							</span>
+						{/if}
 					</span>
 					<div class="min-w-0">
-						<p class="truncate text-foreground">{song.title}</p>
+						<p class={cn('truncate', active ? 'text-primary' : 'text-foreground')}>
+							{song.title}
+						</p>
 						{#if song.artist !== album.artist}
 							<p class="truncate text-xs text-muted-foreground">{song.artist}</p>
 						{/if}
@@ -106,7 +134,7 @@
 					<span class="text-xs text-muted-foreground tabular-nums">
 						{formatDuration(song.duration)}
 					</span>
-				</div>
+				</button>
 			{/each}
 		</div>
 	{/if}
