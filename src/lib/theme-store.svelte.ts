@@ -28,7 +28,7 @@ const initialTheme = loadTheme();
 let activeTheme = $state<string>(initialTheme);
 
 function applyTheme(id: string): void {
-	document.documentElement.setAttribute('data-theme', id);
+	document.documentElement.setAttribute('data-color-theme', id);
 }
 
 // Apply on init

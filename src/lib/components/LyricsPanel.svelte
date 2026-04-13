@@ -3,11 +3,28 @@
 	import { createQuery } from '@tanstack/svelte-query';
 	import { lyricsQuery } from '$lib/queries/lyrics';
 	import { getCurrentTime } from '$lib/player-store.svelte';
+	import {
+		getLyricsPrefs,
+		fontSizeMap,
+		alignMap,
+		spacingMap
+	} from '$lib/lyrics-prefs-store.svelte';
 	import MicrophoneStageIcon from 'phosphor-svelte/lib/MicrophoneStage';
+	import LyricsSettings from '$lib/components/LyricsSettings.svelte';
 
 	let { songId }: { songId: string } = $props();
 
 	const query = createQuery(() => lyricsQuery(songId));
+
+	const prefs = $derived(getLyricsPrefs());
+
+	// When a custom pt is set, suppress Tailwind size classes and use inline style instead
+	const inactiveFontClass = $derived(
+		prefs.customFontSizePt === null ? fontSizeMap[prefs.fontSize].inactive : ''
+	);
+	const activeFontClass = $derived(
+		prefs.customFontSizePt === null ? fontSizeMap[prefs.fontSize].active : 'font-semibold'
+	);
 
 	// Pick the best lyrics entry: prefer synced, fall back to first available
 	const activeLyrics = $derived.by(() => {
@@ -47,8 +64,9 @@
 </script>
 
 <div class="flex w-1/2 flex-col border-l border-border">
-	<div class="px-4 pt-4 pb-2">
+	<div class="flex items-center justify-between px-4 pt-4 pb-2">
 		<h2 class="text-sm font-semibold tracking-wider text-muted-foreground uppercase">Lyrics</h2>
+		<LyricsSettings />
 	</div>
 
 	{#if query.isPending}
@@ -66,18 +84,22 @@
 		</div>
 	{:else}
 		<div bind:this={scrollContainer} class="flex-1 overflow-y-auto px-4 pb-4">
-			<div class="space-y-1 py-4">
+			<div class={cn('py-4', spacingMap[prefs.spacing], alignMap[prefs.textAlign])}>
 				{#each activeLyrics.line as line, i (i)}
 					{#if line.value.trim() === ''}
 						<div class="h-4"></div>
 					{:else}
 						<p
 							data-line-index={i}
+							style={prefs.customFontSizePt !== null
+								? `font-size: ${activeLyrics.synced && i === currentLineIdx ? prefs.customFontSizePt + 4 : prefs.customFontSizePt}pt`
+								: undefined}
 							class={cn(
-								'cursor-default px-2 py-1 text-sm leading-relaxed transition-all duration-300',
+								'cursor-default px-2 py-1 leading-relaxed transition-all duration-300',
+								inactiveFontClass,
 								activeLyrics.synced
 									? i === currentLineIdx
-										? 'text-lg font-semibold text-foreground'
+										? cn(activeFontClass, 'text-foreground')
 										: i < currentLineIdx
 											? 'text-muted-foreground/50'
 											: 'text-muted-foreground'

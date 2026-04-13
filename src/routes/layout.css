@@ -7,7 +7,7 @@
 
 /* ===== Corporate Memo (default) ===== */
 :root,
-[data-theme='corporate-memo'] {
+[data-color-theme='corporate-memo'] {
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.147 0.004 49.25);
 	--card: oklch(1 0 0);
@@ -55,7 +55,7 @@
 }
 
 .dark,
-.dark[data-theme='corporate-memo'] {
+.dark[data-color-theme='corporate-memo'] {
 	--background: oklch(0.147 0.004 49.25);
 	--foreground: oklch(0.985 0.001 106.423);
 	--card: oklch(0.216 0.006 56.043);
@@ -97,7 +97,7 @@
 }
 
 /* ===== Wishful Aurosa ===== */
-[data-theme='wishful-aurosa'] {
+[data-color-theme='wishful-aurosa'] {
 	--background: oklch(0.99 0.005 90);
 	--foreground: oklch(0.25 0.03 140);
 	--card: oklch(0.985 0.007 90);
@@ -118,7 +118,7 @@
 	--ring: oklch(0.78 0.08 145);
 }
 
-.dark[data-theme='wishful-aurosa'] {
+.dark[data-color-theme='wishful-aurosa'] {
 	--background: oklch(0.18 0.01 145);
 	--foreground: oklch(0.92 0.03 95);
 	--card: oklch(0.22 0.015 145);
@@ -140,7 +140,7 @@
 }
 
 /* ===== Misty Dream ===== */
-[data-theme='misty-dream'] {
+[data-color-theme='misty-dream'] {
 	--background: oklch(0.985 0.006 195);
 	--foreground: oklch(0.29 0.022 236);
 	--card: oklch(0.972 0.01 198);
@@ -161,7 +161,7 @@
 	--ring: oklch(0.79 0.063 202);
 }
 
-.dark[data-theme='misty-dream'] {
+.dark[data-color-theme='misty-dream'] {
 	--background: oklch(0.2 0.016 236);
 	--foreground: oklch(0.93 0.018 198);
 	--card: oklch(0.24 0.018 232);
@@ -183,7 +183,7 @@
 }
 
 /* ===== Twilight Echoes ===== */
-[data-theme='twilight-echoes'] {
+[data-color-theme='twilight-echoes'] {
 	--background: oklch(0.972 0.012 300);
 	--foreground: oklch(0.28 0.03 304);
 	--card: oklch(0.956 0.018 302);
@@ -204,7 +204,7 @@
 	--ring: oklch(0.6 0.16 302);
 }
 
-.dark[data-theme='twilight-echoes'] {
+.dark[data-color-theme='twilight-echoes'] {
 	--background: oklch(0.2 0.018 292);
 	--foreground: oklch(0.92 0.018 300);
 	--card: oklch(0.245 0.022 292);
@@ -226,7 +226,7 @@
 }
 
 /* ===== Crimson Shade ===== */
-[data-theme='crimson-shade'] {
+[data-color-theme='crimson-shade'] {
 	--background: oklch(0.982 0.012 32);
 	--foreground: oklch(0.31 0.04 12);
 	--card: oklch(0.97 0.018 28);
@@ -247,7 +247,7 @@
 	--ring: oklch(0.56 0.19 16);
 }
 
-.dark[data-theme='crimson-shade'] {
+.dark[data-color-theme='crimson-shade'] {
 	--background: oklch(0.2 0.022 8);
 	--foreground: oklch(0.93 0.015 40);
 	--card: oklch(0.25 0.032 10);
@@ -269,7 +269,7 @@
 }
 
 /* ===== Spectral Mist ===== */
-[data-theme='spectral-mist'] {
+[data-color-theme='spectral-mist'] {
 	--background: oklch(0.972 0.01 244);
 	--foreground: oklch(0.27 0.028 262);
 	--card: oklch(0.955 0.013 246);
@@ -290,7 +290,7 @@
 	--ring: oklch(0.58 0.115 266);
 }
 
-.dark[data-theme='spectral-mist'] {
+.dark[data-color-theme='spectral-mist'] {
 	--background: oklch(0.19 0.02 258);
 	--foreground: oklch(0.94 0.016 238);
 	--card: oklch(0.235 0.026 258);
@@ -312,7 +312,7 @@
 }
 
 /* ===== Golden Plume ===== */
-[data-theme='golden-plume'] {
+[data-color-theme='golden-plume'] {
 	--background: oklch(0.986 0.018 95);
 	--foreground: oklch(0.34 0.038 72);
 	--card: oklch(0.975 0.025 92);
@@ -333,7 +333,7 @@
 	--ring: oklch(0.84 0.11 90);
 }
 
-.dark[data-theme='golden-plume'] {
+.dark[data-color-theme='golden-plume'] {
 	--background: oklch(0.21 0.012 74);
 	--foreground: oklch(0.95 0.016 96);
 	--card: oklch(0.25 0.014 78);
@@ -355,7 +355,7 @@
 }
 
 /* ===== Forest Ripple ===== */
-[data-theme='forest-ripple'] {
+[data-color-theme='forest-ripple'] {
 	--background: oklch(0.978 0.014 128);
 	--foreground: oklch(0.31 0.04 148);
 	--card: oklch(0.966 0.02 126);
@@ -376,7 +376,7 @@
 	--ring: oklch(0.6 0.12 152);
 }
 
-.dark[data-theme='forest-ripple'] {
+.dark[data-color-theme='forest-ripple'] {
 	--background: oklch(0.2 0.018 156);
 	--foreground: oklch(0.94 0.016 118);
 	--card: oklch(0.24 0.022 154);
@@ -398,7 +398,7 @@
 }
 
 /* ===== Blazing Fields ===== */
-[data-theme='blazing-fields'] {
+[data-color-theme='blazing-fields'] {
 	--background: oklch(0.986 0.014 58);
 	--foreground: oklch(0.31 0.05 36);
 	--card: oklch(0.973 0.022 54);
@@ -419,7 +419,7 @@
 	--ring: oklch(0.72 0.15 50);
 }
 
-.dark[data-theme='blazing-fields'] {
+.dark[data-color-theme='blazing-fields'] {
 	--background: oklch(0.2 0.014 38);
 	--foreground: oklch(0.94 0.016 68);
 	--card: oklch(0.24 0.018 40);
@@ -441,7 +441,7 @@
 }
 
 /* ===== Enchanted Encounter ===== */
-[data-theme='enchanted-encounter'] {
+[data-color-theme='enchanted-encounter'] {
 	--background: oklch(0.982 0.012 344);
 	--foreground: oklch(0.29 0.045 336);
 	--card: oklch(0.968 0.018 340);
@@ -462,7 +462,7 @@
 	--ring: oklch(0.58 0.17 348);
 }
 
-.dark[data-theme='enchanted-encounter'] {
+.dark[data-color-theme='enchanted-encounter'] {
 	--background: oklch(0.2 0.014 330);
 	--foreground: oklch(0.94 0.016 346);
 	--card: oklch(0.245 0.018 332);
