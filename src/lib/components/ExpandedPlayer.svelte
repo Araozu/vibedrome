@@ -46,6 +46,127 @@
 	import MicrophoneStageIcon from 'phosphor-svelte/lib/MicrophoneStage';
 	import LyricsPanel from '$lib/components/LyricsPanel.svelte';
 
+	// --- Color extraction ---
+	interface RGB {
+		r: number;
+		g: number;
+		b: number;
+	}
+
+	interface PaletteCache {
+		colors: string[];
+		idx: number;
+	}
+
+	const PALETTE_CACHE_PREFIX = 'vd-palette:';
+
+	function paletteLoadCache(url: string): PaletteCache | null {
+		try {
+			const raw = localStorage.getItem(PALETTE_CACHE_PREFIX + url);
+			if (!raw) return null;
+			return JSON.parse(raw) as PaletteCache;
+		} catch {
+			return null;
+		}
+	}
+
+	function paletteSaveCache(url: string, colors: string[], idx: number): void {
+		try {
+			localStorage.setItem(PALETTE_CACHE_PREFIX + url, JSON.stringify({ colors, idx }));
+		} catch {
+			// storage unavailable or full — silently ignore
+		}
+	}
+
+	// activePaletteIdx === -1 means "off" (no color applied)
+	let paletteColors = $state<string[]>([]);
+	let activePaletteIdx = $state(0);
+	const bgColor = $derived(activePaletteIdx >= 0 ? (paletteColors[activePaletteIdx] ?? '') : '');
+
+	function rgbToString({ r, g, b }: RGB): string {
+		return `rgb(${r}, ${g}, ${b})`;
+	}
+
+	function extractColors(imageUrl: string): Promise<string[]> {
+		return new Promise((resolve) => {
+			const img = new Image();
+			img.crossOrigin = 'anonymous';
+			img.onload = () => {
+				try {
+					const canvas = document.createElement('canvas');
+					canvas.width = 64;
+					canvas.height = 64;
+					const ctx = canvas.getContext('2d');
+					if (!ctx) {
+						resolve([]);
+						return;
+					}
+					ctx.drawImage(img, 0, 0, 64, 64);
+					const { data } = ctx.getImageData(0, 0, 64, 64);
+					const colorMap = new Map<string, { rgb: RGB; count: number }>();
+					for (let i = 0; i < data.length; i += 4) {
+						const r = data[i],
+							g = data[i + 1],
+							b = data[i + 2],
+							a = data[i + 3];
+						if (a < 128) continue;
+						const qr = Math.floor(r / 32) * 32;
+						const qg = Math.floor(g / 32) * 32;
+						const qb = Math.floor(b / 32) * 32;
+						const key = `${qr},${qg},${qb}`;
+						const entry = colorMap.get(key);
+						if (entry) entry.count++;
+						else colorMap.set(key, { rgb: { r: qr, g: qg, b: qb }, count: 1 });
+					}
+					const sorted = [...colorMap.values()].sort((a, b) => b.count - a.count);
+					resolve(sorted.slice(0, 5).map((e) => rgbToString(e.rgb)));
+				} catch {
+					resolve([]);
+				}
+			};
+			img.onerror = () => resolve([]);
+			img.src = imageUrl;
+		});
+	}
+
+	// Load palette: check cache first, fall back to canvas extraction.
+	$effect(() => {
+		const url = getCurrentCoverArtUrl();
+		paletteColors = [];
+		activePaletteIdx = 0;
+		if (!url) return;
+
+		const cached = paletteLoadCache(url);
+		if (cached) {
+			paletteColors = cached.colors;
+			activePaletteIdx = cached.idx;
+			return;
+		}
+
+		let cancelled = false;
+		extractColors(url).then((colors) => {
+			if (!cancelled) {
+				paletteColors = colors;
+				activePaletteIdx = 0;
+				paletteSaveCache(url, colors, 0);
+			}
+		});
+		return () => {
+			cancelled = true;
+		};
+	});
+
+	// Persist index changes back to cache whenever the user picks a different swatch.
+	$effect(() => {
+		const url = getCurrentCoverArtUrl();
+		const colors = paletteColors;
+		const idx = activePaletteIdx;
+		if (url && colors.length > 0) {
+			paletteSaveCache(url, colors, idx);
+		}
+	});
+
+	// --- Panel state ---
 	type Panel = 'queue' | 'lyrics' | null;
 	let activePanel = $state<Panel>(null);
 	const showQueue = $derived(activePanel === 'queue');
@@ -137,7 +258,10 @@
 
 	<!-- Backdrop -->
 	<div
-		class="fixed inset-x-0 top-12 bottom-0 z-40 flex flex-col bg-background sm:top-0 sm:left-56"
+		class="fixed inset-x-0 top-12 bottom-0 z-40 flex flex-col bg-background transition-colors duration-700 ease-in-out sm:top-0 sm:left-56"
+		style:background-color={bgColor
+			? `color-mix(in srgb, ${bgColor} 35%, var(--color-background) 65%)`
+			: undefined}
 		role="dialog"
 		aria-label="Now Playing"
 		onkeydown={(e) => {
@@ -219,6 +343,35 @@
 								class="block truncate text-xs text-muted-foreground transition-colors hover:text-foreground"
 								>{song.album}</a
 							>
+						{/if}
+
+						{#if paletteColors.length > 0}
+							<div class="mt-3 flex items-center justify-center gap-2">
+								{#each paletteColors as color, i}
+									<button
+										class={cn(
+											'size-[1.1rem] cursor-pointer rounded-full transition-all duration-200',
+											i === activePaletteIdx
+												? 'scale-[1.35] ring-2 ring-foreground/40'
+												: 'opacity-60 hover:scale-110 hover:opacity-100'
+										)}
+										style:background-color={color}
+										onclick={() => (activePaletteIdx = i)}
+										aria-label="Set background to color {i + 1}"
+									></button>
+								{/each}
+								<!-- Off swatch -->
+								<button
+									class={cn(
+										'size-[1.1rem] cursor-pointer rounded-full border border-border bg-muted transition-all duration-200',
+										activePaletteIdx === -1
+											? 'scale-[1.35] opacity-100 ring-2 ring-foreground/40'
+											: 'opacity-50 hover:scale-110 hover:opacity-80'
+									)}
+									onclick={() => (activePaletteIdx = -1)}
+									aria-label="Remove background color"
+								></button>
+							</div>
 						{/if}
 					</div>
 				</div>
