@@ -2,7 +2,7 @@
 	import { cn } from '$lib/utils';
 	import { createQuery } from '@tanstack/svelte-query';
 	import { lyricsQuery } from '$lib/queries/lyrics';
-	import { getCurrentTime } from '$lib/player-store.svelte';
+	import { getCurrentTime, seek } from '$lib/player-store.svelte';
 	import {
 		getLyricsPrefs,
 		fontSizeMap,
@@ -58,7 +58,11 @@
 		if (currentLineIdx < 0 || !scrollContainer) return;
 		const lineEl = scrollContainer.querySelector(`[data-line-index="${currentLineIdx}"]`);
 		if (lineEl) {
-			lineEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			const containerHeight = scrollContainer.clientHeight;
+			const lineTop = (lineEl as HTMLElement).offsetTop;
+			const lineHeight = (lineEl as HTMLElement).offsetHeight;
+			const targetScrollTop = lineTop - containerHeight * 0.4 + lineHeight / 2;
+			scrollContainer.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
 		}
 	});
 </script>
@@ -89,13 +93,15 @@
 					{#if line.value.trim() === ''}
 						<div class="h-4"></div>
 					{:else}
-						<p
+						<button
+							type="button"
 							data-line-index={i}
 							style={prefs.customFontSizePt !== null
 								? `font-size: ${activeLyrics.synced && i === currentLineIdx ? prefs.customFontSizePt + 4 : prefs.customFontSizePt}pt`
 								: undefined}
 							class={cn(
-								'cursor-default px-2 py-1 leading-relaxed transition-all duration-300',
+								'w-full rounded-md bg-transparent px-2 py-1 leading-relaxed transition-all duration-300',
+								activeLyrics.synced ? 'cursor-pointer hover:bg-accent/50' : 'cursor-default',
 								inactiveFontClass,
 								activeLyrics.synced
 									? i === currentLineIdx
@@ -105,9 +111,12 @@
 											: 'text-muted-foreground'
 									: 'text-foreground'
 							)}
+							onclick={activeLyrics.synced
+								? () => seek(((line.start ?? 0) + (activeLyrics.offset ?? 0)) / 1000)
+								: undefined}
 						>
 							{line.value}
-						</p>
+						</button>
 					{/if}
 				{/each}
 			</div>

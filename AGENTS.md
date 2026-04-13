@@ -44,6 +44,18 @@ Runes mode is **enforced project-wide** via `svelte.config.js`. All components m
 - Use `$inspect()` for debugging -- never `console.log` in reactive contexts.
 - Snippets (`{#snippet}`) replace named slots.
 
+### Breakpoints
+
+Tailwind's default breakpoints (`sm`, `md`, `lg`, `xl`, `2xl`) are available as usual. One custom breakpoint is defined in `src/routes/layout.css` inside the `@theme inline` block:
+
+| Name | Min-width        | Typical target        |
+| ---- | ---------------- | --------------------- |
+| `hd` | 67.5rem (1080px) | 1080p / large desktop |
+
+Use the `hd:` prefix exactly like any other Tailwind responsive variant (e.g. `hd:max-w-[48rem]`). If a new custom breakpoint is needed, add it as `--breakpoint-{name}: {value}` inside `@theme inline` in `layout.css` and document it in this table.
+
+> **Important:** always define custom breakpoints in `rem`, not `px`. Tailwind sorts breakpoints by unit type — mixing `px` and `rem` causes the cascade to order them incorrectly, so a smaller breakpoint can silently override a larger one.
+
 ### Styling -- No Hardcoded Colors
 
 **Never hardcode color values.** All colors must come from CSS custom properties via Tailwind's theme tokens.

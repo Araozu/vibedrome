@@ -190,7 +190,9 @@
 			<div class={cn('flex flex-col', showPanel ? 'w-1/2' : 'w-full')}>
 				<!-- Album art + info -->
 				<div class="flex flex-1 flex-col items-center justify-center gap-6 px-6">
-					<div class="w-full max-w-xs overflow-hidden rounded-xl bg-muted shadow-lg sm:max-w-sm">
+					<div
+						class="w-full max-w-xs overflow-hidden rounded-xl bg-muted shadow-lg hd:max-w-[40rem] sm:max-w-sm"
+					>
 						<div class="aspect-square">
 							{#if coverUrl}
 								<CoverImage src={coverUrl} alt={song.title} />
