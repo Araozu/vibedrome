@@ -137,7 +137,7 @@
 
 	<!-- Backdrop -->
 	<div
-		class="fixed inset-x-0 top-12 bottom-0 z-40 flex flex-col bg-background"
+		class="fixed inset-x-0 top-12 bottom-0 z-40 flex flex-col bg-background sm:top-0 sm:left-56"
 		role="dialog"
 		aria-label="Now Playing"
 		onkeydown={(e) => {
