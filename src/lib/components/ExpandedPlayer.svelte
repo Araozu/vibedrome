@@ -44,6 +44,7 @@
 	import SpeakerNoneIcon from 'phosphor-svelte/lib/SpeakerNone';
 	import SpeakerSlashIcon from 'phosphor-svelte/lib/SpeakerSlash';
 	import MicrophoneStageIcon from 'phosphor-svelte/lib/MicrophoneStage';
+	import EyedropperIcon from 'phosphor-svelte/lib/Eyedropper';
 	import LyricsPanel from '$lib/components/LyricsPanel.svelte';
 
 	// --- Color extraction ---
@@ -56,6 +57,7 @@
 	interface PaletteCache {
 		colors: string[];
 		idx: number;
+		customColor?: string | null;
 	}
 
 	const PALETTE_CACHE_PREFIX = 'vd-palette:';
@@ -70,18 +72,38 @@
 		}
 	}
 
-	function paletteSaveCache(url: string, colors: string[], idx: number): void {
+	function paletteSaveCache(
+		url: string,
+		colors: string[],
+		idx: number,
+		customColor: string | null
+	): void {
 		try {
-			localStorage.setItem(PALETTE_CACHE_PREFIX + url, JSON.stringify({ colors, idx }));
+			localStorage.setItem(
+				PALETTE_CACHE_PREFIX + url,
+				JSON.stringify({ colors, idx, customColor })
+			);
 		} catch {
 			// storage unavailable or full — silently ignore
 		}
 	}
 
-	// activePaletteIdx === -1 means "off" (no color applied)
+	// activePaletteIdx: 0–4 = extracted, 5 = custom pick, -1 = off
 	let paletteColors = $state<string[]>([]);
+	let customColor = $state<string | null>(null);
 	let activePaletteIdx = $state(0);
-	const bgColor = $derived(activePaletteIdx >= 0 ? (paletteColors[activePaletteIdx] ?? '') : '');
+	let pickMode = $state(false);
+
+	// Non-reactive ref — holds the offscreen canvas drawn by extractColors for pixel sampling
+	let coverCanvas: HTMLCanvasElement | null = null;
+
+	const bgColor = $derived(
+		activePaletteIdx === -1
+			? ''
+			: activePaletteIdx === 5
+				? (customColor ?? '')
+				: (paletteColors[activePaletteIdx] ?? '')
+	);
 
 	function rgbToString({ r, g, b }: RGB): string {
 		return `rgb(${r}, ${g}, ${b})`;
@@ -102,6 +124,8 @@
 						return;
 					}
 					ctx.drawImage(img, 0, 0, 64, 64);
+					// Keep the canvas around for eyedropper pixel sampling
+					coverCanvas = canvas;
 					const { data } = ctx.getImageData(0, 0, 64, 64);
 					const colorMap = new Map<string, { rgb: RGB; count: number }>();
 					for (let i = 0; i < data.length; i += 4) {
@@ -129,17 +153,48 @@
 		});
 	}
 
+	function handleCoverPick(e: MouseEvent) {
+		if (!pickMode || !coverCanvas) return;
+		pickMode = false;
+		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+		const x = Math.max(0, Math.min(63, Math.floor(((e.clientX - rect.left) / rect.width) * 64)));
+		const y = Math.max(0, Math.min(63, Math.floor(((e.clientY - rect.top) / rect.height) * 64)));
+		const ctx = coverCanvas.getContext('2d');
+		if (!ctx) return;
+		const px = ctx.getImageData(x, y, 1, 1).data;
+		customColor = rgbToString({ r: px[0], g: px[1], b: px[2] });
+		activePaletteIdx = 5;
+	}
+
 	// Load palette: check cache first, fall back to canvas extraction.
 	$effect(() => {
 		const url = getCurrentCoverArtUrl();
 		paletteColors = [];
+		customColor = null;
 		activePaletteIdx = 0;
+		pickMode = false;
+		coverCanvas = null;
 		if (!url) return;
 
 		const cached = paletteLoadCache(url);
 		if (cached) {
 			paletteColors = cached.colors;
+			customColor = cached.customColor ?? null;
 			activePaletteIdx = cached.idx;
+			// Still draw image to canvas so eyedropper works even on cache hit
+			const img = new Image();
+			img.crossOrigin = 'anonymous';
+			img.onload = () => {
+				const canvas = document.createElement('canvas');
+				canvas.width = 64;
+				canvas.height = 64;
+				const ctx = canvas.getContext('2d');
+				if (ctx) {
+					ctx.drawImage(img, 0, 0, 64, 64);
+					coverCanvas = canvas;
+				}
+			};
+			img.src = url;
 			return;
 		}
 
@@ -148,7 +203,7 @@
 			if (!cancelled) {
 				paletteColors = colors;
 				activePaletteIdx = 0;
-				paletteSaveCache(url, colors, 0);
+				paletteSaveCache(url, colors, 0, null);
 			}
 		});
 		return () => {
@@ -156,13 +211,14 @@
 		};
 	});
 
-	// Persist index changes back to cache whenever the user picks a different swatch.
+	// Persist index + customColor changes back to cache.
 	$effect(() => {
 		const url = getCurrentCoverArtUrl();
 		const colors = paletteColors;
 		const idx = activePaletteIdx;
+		const custom = customColor;
 		if (url && colors.length > 0) {
-			paletteSaveCache(url, colors, idx);
+			paletteSaveCache(url, colors, idx, custom);
 		}
 	});
 
@@ -265,7 +321,13 @@
 		role="dialog"
 		aria-label="Now Playing"
 		onkeydown={(e) => {
-			if (e.key === 'Escape') setExpanded(false);
+			if (e.key === 'Escape') {
+				if (pickMode) {
+					pickMode = false;
+					return;
+				}
+				setExpanded(false);
+			}
 		}}
 	>
 		<!-- Top bar -->
@@ -314,18 +376,38 @@
 			<div class={cn('flex flex-col', showPanel ? 'w-1/2' : 'w-full')}>
 				<!-- Album art + info -->
 				<div class="flex flex-1 flex-col items-center justify-center gap-6 px-6">
-					<div
-						class="w-full max-w-xs overflow-hidden rounded-xl bg-muted shadow-lg sm:max-w-sm hd:max-w-[40rem]"
-					>
-						<div class="aspect-square">
-							{#if coverUrl}
-								<CoverImage src={coverUrl} alt={song.title} />
-							{:else}
-								<div class="flex h-full w-full items-center justify-center">
-									<MusicNoteIcon class="size-24 text-muted-foreground" />
-								</div>
-							{/if}
+					<div class="relative w-full max-w-xs sm:max-w-sm hd:max-w-[40rem]">
+						<div class="overflow-hidden rounded-xl bg-muted shadow-lg">
+							<div
+								class={cn('aspect-square', pickMode && coverUrl ? 'cursor-crosshair' : '')}
+								onclick={handleCoverPick}
+								role="presentation"
+							>
+								{#if coverUrl}
+									<CoverImage src={coverUrl} alt={song.title} />
+								{:else}
+									<div class="flex h-full w-full items-center justify-center">
+										<MusicNoteIcon class="size-24 text-muted-foreground" />
+									</div>
+								{/if}
+							</div>
 						</div>
+
+						{#if coverUrl}
+							<button
+								class={cn(
+									'absolute top-2 right-2 inline-flex size-8 items-center justify-center rounded-full backdrop-blur-sm transition-all duration-150',
+									pickMode
+										? 'bg-foreground text-background shadow-md'
+										: 'bg-background/60 text-foreground hover:bg-background/90'
+								)}
+								onclick={() => (pickMode = !pickMode)}
+								aria-label={pickMode ? 'Cancel color pick' : 'Pick color from cover'}
+								title={pickMode ? 'Click on the cover to sample a color' : 'Pick color from cover'}
+							>
+								<EyedropperIcon class="size-4" />
+							</button>
+						{/if}
 					</div>
 
 					<div class="w-full max-w-xs text-center sm:max-w-sm">
@@ -360,6 +442,20 @@
 										aria-label="Set background to color {i + 1}"
 									></button>
 								{/each}
+								<!-- Custom eyedropper swatch -->
+								{#if customColor}
+									<button
+										class={cn(
+											'size-[1.1rem] cursor-pointer rounded-full ring-1 ring-foreground/20 transition-all duration-200',
+											activePaletteIdx === 5
+												? 'scale-[1.35] ring-2 ring-foreground/40'
+												: 'opacity-60 hover:scale-110 hover:opacity-100'
+										)}
+										style:background-color={customColor}
+										onclick={() => (activePaletteIdx = 5)}
+										aria-label="Set background to picked color"
+									></button>
+								{/if}
 								<!-- Off swatch -->
 								<button
 									class={cn(

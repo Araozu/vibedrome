@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { createQuery } from '@tanstack/svelte-query';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { untrack } from 'svelte';
 	import { albumsQuery, albumSearchQuery } from '$lib/queries/albums';
 	import { getActiveServer } from '$lib/server-store.svelte';
 	import { getCoverArtUrl } from '$lib/subsonic';
@@ -12,30 +15,58 @@
 
 	const PAGE_SIZE = 50;
 
-	let searchInput = $state('');
-	let debouncedSearch = $state('');
-	let page = $state(0);
+	// URL is the source of truth for committed search and page number.
+	const urlSearch = $derived(page.url.searchParams.get('q') ?? '');
+	const currentPage = $derived(Number(page.url.searchParams.get('page') ?? '0'));
 
+	// Local UI state for the search input — initialized from URL on load.
+	let searchInput = $state(page.url.searchParams.get('q') ?? '');
+
+	function updateUrl(q: string, p: number, replace = false) {
+		const parts: string[] = [];
+		if (q) parts.push(`q=${encodeURIComponent(q)}`);
+		if (p > 0) parts.push(`page=${p}`);
+		const qs = parts.join('&');
+		goto(qs ? `?${qs}` : page.url.pathname, {
+			replaceState: replace,
+			keepFocus: true,
+			noScroll: true
+		});
+	}
+
+	// Debounce typed input → update URL (skip the initial mount run).
+	let initialized = false;
 	$effect(() => {
 		const q = searchInput;
+		if (!initialized) {
+			initialized = true;
+			return;
+		}
 		const timeout = setTimeout(() => {
-			debouncedSearch = q;
-			page = 0;
+			updateUrl(q, 0, true);
 		}, 300);
 		return () => clearTimeout(timeout);
 	});
 
+	// Keep input in sync when URL changes externally (browser back/forward).
+	$effect(() => {
+		const q = urlSearch;
+		untrack(() => {
+			searchInput = q;
+		});
+	});
+
 	const browseQuery = createQuery(() =>
-		albumsQuery('alphabeticalByName', PAGE_SIZE, page * PAGE_SIZE)
+		albumsQuery('alphabeticalByName', PAGE_SIZE, currentPage * PAGE_SIZE)
 	);
 	const searchQuery = createQuery(() =>
-		albumSearchQuery(debouncedSearch, PAGE_SIZE, page * PAGE_SIZE)
+		albumSearchQuery(urlSearch, PAGE_SIZE, currentPage * PAGE_SIZE)
 	);
 
-	const query = $derived(debouncedSearch ? searchQuery : browseQuery);
+	const query = $derived(urlSearch ? searchQuery : browseQuery);
 
 	const hasNextPage = $derived((query.data?.length ?? 0) === PAGE_SIZE);
-	const hasPrevPage = $derived(page > 0);
+	const hasPrevPage = $derived(currentPage > 0);
 </script>
 
 <div class="space-y-6">
@@ -68,7 +99,7 @@
 		<p class="text-destructive">{query.error.message}</p>
 	{:else if query.data.length === 0}
 		<p class="text-muted-foreground">
-			{debouncedSearch ? 'No albums match your search.' : 'No albums found.'}
+			{urlSearch ? 'No albums match your search.' : 'No albums found.'}
 		</p>
 	{:else}
 		<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -102,12 +133,22 @@
 
 		{#if hasPrevPage || hasNextPage}
 			<div class="flex items-center justify-center gap-3 pt-2">
-				<Button variant="outline" size="sm" disabled={!hasPrevPage} onclick={() => (page -= 1)}>
+				<Button
+					variant="outline"
+					size="sm"
+					disabled={!hasPrevPage}
+					onclick={() => updateUrl(urlSearch, currentPage - 1)}
+				>
 					<CaretLeftIcon class="size-4" />
 					Previous
 				</Button>
-				<span class="text-sm text-muted-foreground">Page {page + 1}</span>
-				<Button variant="outline" size="sm" disabled={!hasNextPage} onclick={() => (page += 1)}>
+				<span class="text-sm text-muted-foreground">Page {currentPage + 1}</span>
+				<Button
+					variant="outline"
+					size="sm"
+					disabled={!hasNextPage}
+					onclick={() => updateUrl(urlSearch, currentPage + 1)}
+				>
 					Next
 					<CaretRightIcon class="size-4" />
 				</Button>
