@@ -18,6 +18,7 @@
 		getQueue,
 		getCurrentIndex,
 		playAt,
+		removeFromQueue,
 		getVolume,
 		setVolume,
 		isMuted,
@@ -126,7 +127,7 @@
 
 	<!-- Backdrop -->
 	<div
-		class="fixed inset-0 z-50 flex flex-col bg-background"
+		class="fixed inset-x-0 top-12 bottom-0 z-40 flex flex-col bg-background"
 		role="dialog"
 		aria-label="Now Playing"
 		onkeydown={(e) => {
@@ -161,31 +162,185 @@
 
 		<!-- Main content area -->
 		<div class="flex min-h-0 flex-1 flex-row">
-			<!-- Left column: Album art + info (always visible) -->
-			<div
-				class={cn(
-					'flex flex-col items-center justify-center gap-6 px-6',
-					showQueue ? 'w-1/2' : 'w-full'
-				)}
-			>
-				<div class="w-full max-w-xs overflow-hidden rounded-xl bg-muted shadow-lg sm:max-w-sm">
-					<div class="aspect-square">
-						{#if coverUrl}
-							<CoverImage src={coverUrl} alt={song.title} />
-						{:else}
-							<div class="flex h-full w-full items-center justify-center">
-								<MusicNoteIcon class="size-24 text-muted-foreground" />
-							</div>
+			<!-- Left column: Album art + info + controls -->
+			<div class={cn('flex flex-col', showQueue ? 'w-1/2' : 'w-full')}>
+				<!-- Album art + info -->
+				<div class="flex flex-1 flex-col items-center justify-center gap-6 px-6">
+					<div class="w-full max-w-xs overflow-hidden rounded-xl bg-muted shadow-lg sm:max-w-sm">
+						<div class="aspect-square">
+							{#if coverUrl}
+								<CoverImage src={coverUrl} alt={song.title} />
+							{:else}
+								<div class="flex h-full w-full items-center justify-center">
+									<MusicNoteIcon class="size-24 text-muted-foreground" />
+								</div>
+							{/if}
+						</div>
+					</div>
+
+					<div class="w-full max-w-xs text-center sm:max-w-sm">
+						<h2 class="truncate text-xl font-bold text-foreground">{song.title}</h2>
+						<a
+							href="/artists/{song.artistId}"
+							onclick={() => setExpanded(false)}
+							class="block truncate text-sm text-muted-foreground transition-colors hover:text-foreground"
+							>{song.artist}</a
+						>
+						{#if song.album}
+							<a
+								href="/albums/{song.albumId}"
+								onclick={() => setExpanded(false)}
+								class="block truncate text-xs text-muted-foreground transition-colors hover:text-foreground"
+								>{song.album}</a
+							>
 						{/if}
 					</div>
 				</div>
 
-				<div class="w-full max-w-xs text-center sm:max-w-sm">
-					<h2 class="truncate text-xl font-bold text-foreground">{song.title}</h2>
-					<p class="truncate text-sm text-muted-foreground">{song.artist}</p>
-					{#if song.album}
-						<p class="truncate text-xs text-muted-foreground">{song.album}</p>
-					{/if}
+				<!-- Seek bar + controls -->
+				<div class="px-6 pb-8">
+					<!-- Seek bar -->
+					<div class="mx-auto w-full max-w-xs sm:max-w-sm">
+						<div
+							data-seek-bar
+							class="group relative h-2 w-full cursor-pointer rounded-full bg-muted"
+							onmousedown={handleSeekStart}
+							ontouchstart={handleSeekStart}
+							role="slider"
+							aria-label="Seek"
+							aria-valuenow={Math.round(getCurrentTime())}
+							aria-valuemin={0}
+							aria-valuemax={Math.round(getDuration())}
+							tabindex={0}
+							onkeydown={(e) => {
+								if (e.key === 'ArrowRight') seek(getCurrentTime() + 5);
+								if (e.key === 'ArrowLeft') seek(getCurrentTime() - 5);
+							}}
+						>
+							<div
+								class="pointer-events-none h-full rounded-full bg-primary"
+								style="width: {seeking ? seekValue : progress}%"
+							></div>
+						</div>
+						<div class="mt-1 flex justify-between text-xs text-muted-foreground tabular-nums">
+							<span>{formatTime(getCurrentTime())}</span>
+							<span>{formatTime(getDuration())}</span>
+						</div>
+					</div>
+
+					<!-- Controls -->
+					<div class="mt-4 flex items-center justify-center gap-3">
+						<!-- Shuffle -->
+						<button
+							class={cn(
+								'inline-flex size-10 items-center justify-center rounded-full transition-colors',
+								isShuffle()
+									? 'text-primary hover:bg-accent'
+									: 'text-muted-foreground hover:bg-accent hover:text-foreground'
+							)}
+							onclick={toggleShuffle}
+							aria-label="Shuffle"
+							aria-pressed={isShuffle()}
+						>
+							<ShuffleIcon class="size-5" weight={isShuffle() ? 'bold' : 'regular'} />
+						</button>
+
+						<button
+							class={cn(
+								'inline-flex size-11 items-center justify-center rounded-full transition-colors',
+								getHasPrev() || getCurrentTime() > 3
+									? 'text-foreground hover:bg-accent'
+									: 'text-muted-foreground/40'
+							)}
+							disabled={!getHasPrev() && getCurrentTime() <= 3}
+							onclick={prev}
+							aria-label="Previous"
+						>
+							<SkipBackIcon class="size-7" weight="fill" />
+						</button>
+
+						<button
+							class="inline-flex size-14 items-center justify-center rounded-full bg-foreground text-background transition-colors hover:bg-foreground/90"
+							onclick={togglePlay}
+							aria-label={isPlaying() ? 'Pause' : 'Play'}
+						>
+							{#if isPlaying()}
+								<PauseIcon class="size-7" weight="fill" />
+							{:else}
+								<PlayIcon class="size-7" weight="fill" />
+							{/if}
+						</button>
+
+						<button
+							class={cn(
+								'inline-flex size-11 items-center justify-center rounded-full transition-colors',
+								getHasNext() ? 'text-foreground hover:bg-accent' : 'text-muted-foreground/40'
+							)}
+							disabled={!getHasNext()}
+							onclick={next}
+							aria-label="Next"
+						>
+							<SkipForwardIcon class="size-7" weight="fill" />
+						</button>
+
+						<!-- Repeat -->
+						<button
+							class={cn(
+								'inline-flex size-10 items-center justify-center rounded-full transition-colors',
+								getRepeat() !== 'off'
+									? 'text-primary hover:bg-accent'
+									: 'text-muted-foreground hover:bg-accent hover:text-foreground'
+							)}
+							onclick={cycleRepeat}
+							aria-label="Repeat: {getRepeat()}"
+						>
+							{#if getRepeat() === 'one'}
+								<RepeatOnceIcon class="size-5" weight="bold" />
+							{:else}
+								<RepeatIcon class="size-5" weight={getRepeat() === 'all' ? 'bold' : 'regular'} />
+							{/if}
+						</button>
+					</div>
+
+					<!-- Volume -->
+					<div class="mx-auto mt-4 flex w-full max-w-xs items-center gap-2 sm:max-w-sm">
+						<button
+							class="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+							onclick={toggleMute}
+							aria-label={isMuted() ? 'Unmute' : 'Mute'}
+						>
+							{#if isMuted() || getVolume() === 0}
+								<SpeakerSlashIcon class="size-4" />
+							{:else if getVolume() < 0.33}
+								<SpeakerNoneIcon class="size-4" />
+							{:else if getVolume() < 0.66}
+								<SpeakerLowIcon class="size-4" />
+							{:else}
+								<SpeakerHighIcon class="size-4" />
+							{/if}
+						</button>
+						<div
+							data-volume-bar
+							class="relative h-1.5 flex-1 cursor-pointer rounded-full bg-muted"
+							onmousedown={handleVolumeStart}
+							ontouchstart={handleVolumeStart}
+							role="slider"
+							aria-label="Volume"
+							aria-valuenow={Math.round(volumePercent)}
+							aria-valuemin={0}
+							aria-valuemax={100}
+							tabindex={0}
+							onkeydown={(e) => {
+								if (e.key === 'ArrowRight') setVolume(getVolume() + 0.05);
+								if (e.key === 'ArrowLeft') setVolume(getVolume() - 0.05);
+							}}
+						>
+							<div
+								class="pointer-events-none h-full rounded-full bg-primary"
+								style="width: {volumePercent}%"
+							></div>
+						</div>
+					</div>
 				</div>
 			</div>
 
@@ -200,177 +355,45 @@
 					<div class="flex-1 overflow-y-auto px-4 pb-4">
 						<div class="space-y-0.5">
 							{#each queue as queueSong, i (queueSong.id + '-' + i)}
-								<button
+								<div
 									class={cn(
-										'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors',
+										'group flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors',
 										i === currentIdx
 											? 'bg-accent text-accent-foreground'
 											: 'text-foreground hover:bg-accent/50'
 									)}
-									onclick={() => playAt(i)}
 								>
-									<span class="w-6 text-right text-xs text-muted-foreground tabular-nums">
-										{i + 1}
-									</span>
-									<div class="min-w-0 flex-1">
-										<p class="truncate">{queueSong.title}</p>
-										<p class="truncate text-xs text-muted-foreground">{queueSong.artist}</p>
-									</div>
-									<span class="text-xs text-muted-foreground tabular-nums">
-										{formatTime(queueSong.duration)}
-									</span>
-								</button>
+									<button
+										class="flex min-w-0 flex-1 items-center gap-3 text-left"
+										onclick={() => playAt(i)}
+									>
+										<span class="w-6 text-right text-xs text-muted-foreground tabular-nums">
+											{i + 1}
+										</span>
+										<div class="min-w-0 flex-1">
+											<p class="truncate">{queueSong.title}</p>
+											<p class="truncate text-xs text-muted-foreground">{queueSong.artist}</p>
+										</div>
+										<span class="text-xs text-muted-foreground tabular-nums">
+											{formatTime(queueSong.duration)}
+										</span>
+									</button>
+									<button
+										class="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground opacity-0 transition-all group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+										onclick={(e) => {
+											e.stopPropagation();
+											removeFromQueue(i);
+										}}
+										aria-label="Remove from queue"
+									>
+										<XIcon class="size-3.5" />
+									</button>
+								</div>
 							{/each}
 						</div>
 					</div>
 				</div>
 			{/if}
-		</div>
-
-		<!-- Seek bar + controls at bottom -->
-		<div class="px-6 pb-8">
-			<!-- Seek bar -->
-			<div class="mx-auto w-full max-w-xs sm:max-w-sm">
-				<div
-					data-seek-bar
-					class="group relative h-2 w-full cursor-pointer rounded-full bg-muted"
-					onmousedown={handleSeekStart}
-					ontouchstart={handleSeekStart}
-					role="slider"
-					aria-label="Seek"
-					aria-valuenow={Math.round(getCurrentTime())}
-					aria-valuemin={0}
-					aria-valuemax={Math.round(getDuration())}
-					tabindex={0}
-					onkeydown={(e) => {
-						if (e.key === 'ArrowRight') seek(getCurrentTime() + 5);
-						if (e.key === 'ArrowLeft') seek(getCurrentTime() - 5);
-					}}
-				>
-					<div
-						class="pointer-events-none h-full rounded-full bg-primary"
-						style="width: {seeking ? seekValue : progress}%"
-					></div>
-				</div>
-				<div class="mt-1 flex justify-between text-xs text-muted-foreground tabular-nums">
-					<span>{formatTime(getCurrentTime())}</span>
-					<span>{formatTime(getDuration())}</span>
-				</div>
-			</div>
-
-			<!-- Controls -->
-			<div class="mt-4 flex items-center justify-center gap-3">
-				<!-- Shuffle -->
-				<button
-					class={cn(
-						'inline-flex size-10 items-center justify-center rounded-full transition-colors',
-						isShuffle()
-							? 'text-primary hover:bg-accent'
-							: 'text-muted-foreground hover:bg-accent hover:text-foreground'
-					)}
-					onclick={toggleShuffle}
-					aria-label="Shuffle"
-					aria-pressed={isShuffle()}
-				>
-					<ShuffleIcon class="size-5" weight={isShuffle() ? 'bold' : 'regular'} />
-				</button>
-
-				<button
-					class={cn(
-						'inline-flex size-11 items-center justify-center rounded-full transition-colors',
-						getHasPrev() || getCurrentTime() > 3
-							? 'text-foreground hover:bg-accent'
-							: 'text-muted-foreground/40'
-					)}
-					disabled={!getHasPrev() && getCurrentTime() <= 3}
-					onclick={prev}
-					aria-label="Previous"
-				>
-					<SkipBackIcon class="size-7" weight="fill" />
-				</button>
-
-				<button
-					class="inline-flex size-14 items-center justify-center rounded-full bg-foreground text-background transition-colors hover:bg-foreground/90"
-					onclick={togglePlay}
-					aria-label={isPlaying() ? 'Pause' : 'Play'}
-				>
-					{#if isPlaying()}
-						<PauseIcon class="size-7" weight="fill" />
-					{:else}
-						<PlayIcon class="size-7" weight="fill" />
-					{/if}
-				</button>
-
-				<button
-					class={cn(
-						'inline-flex size-11 items-center justify-center rounded-full transition-colors',
-						getHasNext() ? 'text-foreground hover:bg-accent' : 'text-muted-foreground/40'
-					)}
-					disabled={!getHasNext()}
-					onclick={next}
-					aria-label="Next"
-				>
-					<SkipForwardIcon class="size-7" weight="fill" />
-				</button>
-
-				<!-- Repeat -->
-				<button
-					class={cn(
-						'inline-flex size-10 items-center justify-center rounded-full transition-colors',
-						getRepeat() !== 'off'
-							? 'text-primary hover:bg-accent'
-							: 'text-muted-foreground hover:bg-accent hover:text-foreground'
-					)}
-					onclick={cycleRepeat}
-					aria-label="Repeat: {getRepeat()}"
-				>
-					{#if getRepeat() === 'one'}
-						<RepeatOnceIcon class="size-5" weight="bold" />
-					{:else}
-						<RepeatIcon class="size-5" weight={getRepeat() === 'all' ? 'bold' : 'regular'} />
-					{/if}
-				</button>
-			</div>
-
-			<!-- Volume -->
-			<div class="mx-auto mt-4 flex w-full max-w-xs items-center gap-2 sm:max-w-sm">
-				<button
-					class="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-					onclick={toggleMute}
-					aria-label={isMuted() ? 'Unmute' : 'Mute'}
-				>
-					{#if isMuted() || getVolume() === 0}
-						<SpeakerSlashIcon class="size-4" />
-					{:else if getVolume() < 0.33}
-						<SpeakerNoneIcon class="size-4" />
-					{:else if getVolume() < 0.66}
-						<SpeakerLowIcon class="size-4" />
-					{:else}
-						<SpeakerHighIcon class="size-4" />
-					{/if}
-				</button>
-				<div
-					data-volume-bar
-					class="relative h-1.5 flex-1 cursor-pointer rounded-full bg-muted"
-					onmousedown={handleVolumeStart}
-					ontouchstart={handleVolumeStart}
-					role="slider"
-					aria-label="Volume"
-					aria-valuenow={Math.round(volumePercent)}
-					aria-valuemin={0}
-					aria-valuemax={100}
-					tabindex={0}
-					onkeydown={(e) => {
-						if (e.key === 'ArrowRight') setVolume(getVolume() + 0.05);
-						if (e.key === 'ArrowLeft') setVolume(getVolume() - 0.05);
-					}}
-				>
-					<div
-						class="pointer-events-none h-full rounded-full bg-primary"
-						style="width: {volumePercent}%"
-					></div>
-				</div>
-			</div>
 		</div>
 	</div>
 {/if}

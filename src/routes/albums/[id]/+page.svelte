@@ -95,7 +95,9 @@
 					<p class="text-xs font-medium tracking-wider text-muted-foreground uppercase">Album</p>
 					<h1 class="text-3xl font-bold tracking-tight text-foreground">{album.name}</h1>
 					<p class="text-sm text-muted-foreground">
-						{album.artist}
+						<a href="/artists/{album.artistId}" class="hover:text-foreground hover:underline">
+							{album.artist}
+						</a>
 						{#if album.year}&middot; {album.year}{/if}
 						{#if album.genre}&middot; {album.genre}{/if}
 					</p>

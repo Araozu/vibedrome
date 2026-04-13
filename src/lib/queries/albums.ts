@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/svelte-query';
-import { getAlbumList, getAlbum, type Album, type AlbumDetail } from '$lib/subsonic';
+import { getAlbumList, getAlbum, searchAlbums, type Album, type AlbumDetail } from '$lib/subsonic';
 import { getActiveServer } from '$lib/server-store.svelte';
 
 export const albumsQuery = (
@@ -26,4 +26,15 @@ export const albumDetailQuery = (id: string) =>
 			return getAlbum(server, id);
 		},
 		enabled: !!getActiveServer() && !!id
+	});
+
+export const albumSearchQuery = (query: string, size = 50, offset = 0) =>
+	queryOptions({
+		queryKey: ['albums', 'search', query, size, offset],
+		queryFn: async (): Promise<Album[]> => {
+			const server = getActiveServer();
+			if (!server) throw new Error('No server configured');
+			return searchAlbums(server, query, size, offset);
+		},
+		enabled: !!getActiveServer() && query.length > 0
 	});

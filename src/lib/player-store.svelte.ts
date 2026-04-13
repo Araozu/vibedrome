@@ -6,6 +6,22 @@ import { getActiveServer } from './server-store.svelte';
 
 export type RepeatMode = 'off' | 'all' | 'one';
 
+// ---- Persistence ----
+
+const VOLUME_KEY = 'player:volume';
+const MUTED_KEY = 'player:muted';
+
+function readVolume(): number {
+	const raw = localStorage.getItem(VOLUME_KEY);
+	if (raw === null) return 1;
+	const n = parseFloat(raw);
+	return Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 1;
+}
+
+function readMuted(): boolean {
+	return localStorage.getItem(MUTED_KEY) === 'true';
+}
+
 // ---- State ----
 
 let queue = $state<Song[]>([]);
@@ -14,8 +30,8 @@ let playing = $state(false);
 let currentTime = $state(0);
 let duration = $state(0);
 let expanded = $state(false);
-let volume = $state(1);
-let muted = $state(false);
+let volume = $state(readVolume());
+let muted = $state(readMuted());
 let shuffle = $state(false);
 let repeat = $state<RepeatMode>('off');
 
@@ -213,7 +229,9 @@ export function setVolume(v: number): void {
 	el.volume = muted ? 0 : volume;
 	if (volume > 0 && muted) {
 		muted = false;
+		localStorage.setItem(MUTED_KEY, 'false');
 	}
+	localStorage.setItem(VOLUME_KEY, String(volume));
 }
 
 export function isMuted(): boolean {
@@ -224,6 +242,7 @@ export function toggleMute(): void {
 	muted = !muted;
 	const el = getAudio();
 	el.volume = muted ? 0 : volume;
+	localStorage.setItem(MUTED_KEY, String(muted));
 }
 
 export function isShuffle(): boolean {
@@ -329,6 +348,40 @@ export function playAt(index: number): void {
 	const song = queue[currentIndex];
 	if (song) {
 		loadAndPlay(song);
+	}
+}
+
+/** Remove a track from the queue by index. */
+export function removeFromQueue(index: number): void {
+	if (index < 0 || index >= queue.length) return;
+
+	// If removing the currently playing track
+	if (index === currentIndex) {
+		const el = getAudio();
+		el.pause();
+		el.removeAttribute('src');
+		el.load();
+
+		queue = queue.filter((_, i) => i !== index);
+
+		if (queue.length === 0) {
+			currentIndex = -1;
+			playing = false;
+			duration = 0;
+			currentTime = 0;
+		} else {
+			// Clamp so we don't go past the end
+			currentIndex = Math.min(currentIndex, queue.length - 1);
+			const song = queue[currentIndex];
+			if (song) loadAndPlay(song);
+		}
+	} else {
+		const wasAfter = index > currentIndex;
+		queue = queue.filter((_, i) => i !== index);
+		if (!wasAfter) {
+			// Removed before current, shift index down
+			currentIndex -= 1;
+		}
 	}
 }
 

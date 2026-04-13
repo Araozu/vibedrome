@@ -201,6 +201,13 @@ interface GetAlbumList2Response {
 	};
 }
 
+interface Search3Response {
+	status: string;
+	searchResult3: {
+		album?: Album[];
+	};
+}
+
 interface GetAlbumResponse {
 	status: string;
 	album: AlbumDetail;
@@ -255,6 +262,22 @@ export async function getAlbumList(
 export async function getAlbum(config: ServerConfig, id: string): Promise<AlbumDetail> {
 	const res = await apiRequest<GetAlbumResponse>(config, 'getAlbum', { id });
 	return res.album;
+}
+
+export async function searchAlbums(
+	config: ServerConfig,
+	query: string,
+	size = 50,
+	offset = 0
+): Promise<Album[]> {
+	const res = await apiRequest<Search3Response>(config, 'search3', {
+		query,
+		albumCount: String(size),
+		albumOffset: String(offset),
+		artistCount: '0',
+		songCount: '0'
+	});
+	return res.searchResult3?.album ?? [];
 }
 
 export async function getArtists(config: ServerConfig): Promise<Artist[]> {
