@@ -178,6 +178,20 @@ export interface AlbumDetail extends Album {
 	song: Song[];
 }
 
+export interface LyricsLine {
+	start?: number; // milliseconds (present when synced)
+	value: string;
+}
+
+export interface StructuredLyrics {
+	displayArtist?: string;
+	displayTitle?: string;
+	lang: string;
+	synced: boolean;
+	offset?: number; // ms offset to add to all start values
+	line: LyricsLine[];
+}
+
 export interface Artist {
 	id: string;
 	name: string;
@@ -223,6 +237,13 @@ interface GetArtistsResponse {
 interface GetArtistResponse {
 	status: string;
 	artist: ArtistDetail;
+}
+
+interface GetLyricsBySongIdResponse {
+	status: string;
+	lyricsList?: {
+		structuredLyrics?: StructuredLyrics[];
+	};
 }
 
 interface PingResponse {
@@ -313,4 +334,19 @@ export function getStreamUrl(config: ServerConfig, songId: string): string {
 	params.set('id', songId);
 	params.set('format', 'raw');
 	return `${base}/rest/stream?${params.toString()}`;
+}
+
+/**
+ * Fetch structured lyrics for a song via the OpenSubsonic `getLyricsBySongId` endpoint.
+ * Returns an array of structured lyrics (possibly multiple languages), or an empty array
+ * if the song has no embedded lyrics.
+ */
+export async function getLyricsBySongId(
+	config: ServerConfig,
+	songId: string
+): Promise<StructuredLyrics[]> {
+	const res = await apiRequest<GetLyricsBySongIdResponse>(config, 'getLyricsBySongId', {
+		id: songId
+	});
+	return res.lyricsList?.structuredLyrics ?? [];
 }

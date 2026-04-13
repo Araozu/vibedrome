@@ -43,8 +43,18 @@
 	import SpeakerLowIcon from 'phosphor-svelte/lib/SpeakerLow';
 	import SpeakerNoneIcon from 'phosphor-svelte/lib/SpeakerNone';
 	import SpeakerSlashIcon from 'phosphor-svelte/lib/SpeakerSlash';
+	import MicrophoneStageIcon from 'phosphor-svelte/lib/MicrophoneStage';
+	import LyricsPanel from '$lib/components/LyricsPanel.svelte';
 
-	let showQueue = $state(false);
+	type Panel = 'queue' | 'lyrics' | null;
+	let activePanel = $state<Panel>(null);
+	const showQueue = $derived(activePanel === 'queue');
+	const showLyrics = $derived(activePanel === 'lyrics');
+	const showPanel = $derived(activePanel !== null);
+
+	function togglePanel(panel: 'queue' | 'lyrics') {
+		activePanel = activePanel === panel ? null : panel;
+	}
 	let seeking = $state(false);
 	let seekValue = $state(0);
 	let volumeSeeking = $state(false);
@@ -146,24 +156,38 @@
 
 			<p class="text-xs font-medium tracking-wider text-muted-foreground uppercase">Now Playing</p>
 
-			<button
-				class={cn(
-					'inline-flex size-9 items-center justify-center rounded-full transition-colors',
-					showQueue
-						? 'bg-accent text-accent-foreground'
-						: 'text-muted-foreground hover:bg-accent hover:text-foreground'
-				)}
-				onclick={() => (showQueue = !showQueue)}
-				aria-label="Toggle queue"
-			>
-				<QueueIcon class="size-5" />
-			</button>
+			<div class="flex items-center gap-1">
+				<button
+					class={cn(
+						'inline-flex size-9 items-center justify-center rounded-full transition-colors',
+						showLyrics
+							? 'bg-accent text-accent-foreground'
+							: 'text-muted-foreground hover:bg-accent hover:text-foreground'
+					)}
+					onclick={() => togglePanel('lyrics')}
+					aria-label="Toggle lyrics"
+				>
+					<MicrophoneStageIcon class="size-5" />
+				</button>
+				<button
+					class={cn(
+						'inline-flex size-9 items-center justify-center rounded-full transition-colors',
+						showQueue
+							? 'bg-accent text-accent-foreground'
+							: 'text-muted-foreground hover:bg-accent hover:text-foreground'
+					)}
+					onclick={() => togglePanel('queue')}
+					aria-label="Toggle queue"
+				>
+					<QueueIcon class="size-5" />
+				</button>
+			</div>
 		</div>
 
 		<!-- Main content area -->
 		<div class="flex min-h-0 flex-1 flex-row">
 			<!-- Left column: Album art + info + controls -->
-			<div class={cn('flex flex-col', showQueue ? 'w-1/2' : 'w-full')}>
+			<div class={cn('flex flex-col', showPanel ? 'w-1/2' : 'w-full')}>
 				<!-- Album art + info -->
 				<div class="flex flex-1 flex-col items-center justify-center gap-6 px-6">
 					<div class="w-full max-w-xs overflow-hidden rounded-xl bg-muted shadow-lg sm:max-w-sm">
@@ -393,6 +417,11 @@
 						</div>
 					</div>
 				</div>
+			{/if}
+
+			<!-- Right column: Lyrics -->
+			{#if showLyrics}
+				<LyricsPanel songId={song.id} />
 			{/if}
 		</div>
 	</div>
