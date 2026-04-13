@@ -7,7 +7,6 @@
 	import Navbar from '$lib/components/Navbar.svelte';
 	import MiniPlayer from '$lib/components/MiniPlayer.svelte';
 	import ExpandedPlayer from '$lib/components/ExpandedPlayer.svelte';
-	import { getCurrentSong } from '$lib/player-store.svelte';
 
 	let { children } = $props();
 
@@ -28,13 +27,15 @@
 </svelte:head>
 
 <QueryClientProvider client={queryClient}>
-	<div class="flex min-h-svh flex-col bg-background text-foreground">
+	<div class="flex h-svh flex-col bg-background text-foreground sm:flex-row">
 		<Navbar />
-		<main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6" class:pb-24={!!getCurrentSong()}>
-			{@render children()}
-		</main>
+		<div class="flex min-h-0 min-w-0 flex-1 flex-col">
+			<main class="flex-1 overflow-y-auto px-6 py-6">
+				{@render children()}
+			</main>
+			<MiniPlayer />
+		</div>
 	</div>
-	<MiniPlayer />
 	<ExpandedPlayer />
 	<SvelteQueryDevtools />
 </QueryClientProvider>

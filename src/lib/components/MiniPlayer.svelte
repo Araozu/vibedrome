@@ -78,9 +78,7 @@
 	{@const song = getCurrentSong()!}
 	{@const coverUrl = getCurrentCoverArtUrl()}
 
-	<div
-		class="fixed right-0 bottom-0 left-0 z-40 border-t border-border bg-background/95 backdrop-blur-lg"
-	>
+	<div class="border-t border-border bg-background/95 backdrop-blur-lg sm:hidden">
 		<!-- Seek bar (thin line at top of mini player) -->
 		<div
 			data-seek-bar
