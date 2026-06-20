@@ -1,5 +1,6 @@
 <script lang="ts">
 	import './layout.css';
+	import { page } from '$app/state';
 	import favicon from '$lib/assets/favicon.svg';
 	import { ModeWatcher } from 'mode-watcher';
 	import { QueryClientProvider, QueryClient } from '@tanstack/svelte-query';
@@ -7,6 +8,7 @@
 	import Navbar from '$lib/components/Navbar.svelte';
 	import MiniPlayer from '$lib/components/MiniPlayer.svelte';
 	import ExpandedPlayer from '$lib/components/ExpandedPlayer.svelte';
+	import { setExpanded } from '$lib/player-store.svelte';
 
 	let { children } = $props();
 
@@ -16,6 +18,17 @@
 				staleTime: 60 * 1000,
 				retry: 1
 			}
+		}
+	});
+
+	let currentPath = $state(page.url.pathname);
+
+	$effect(() => {
+		const nextPath = page.url.pathname;
+
+		if (nextPath !== currentPath) {
+			currentPath = nextPath;
+			setExpanded(false);
 		}
 	});
 </script>

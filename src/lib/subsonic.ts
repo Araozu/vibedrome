@@ -178,6 +178,17 @@ export interface AlbumDetail extends Album {
 	song: Song[];
 }
 
+export type AlbumListType =
+	| 'newest'
+	| 'frequent'
+	| 'recent'
+	| 'random'
+	| 'alphabeticalByName'
+	| 'alphabeticalByArtist'
+	| 'starred'
+	| 'byYear'
+	| 'byGenre';
+
 export interface LyricsLine {
 	start?: number; // milliseconds (present when synced)
 	value: string;
@@ -259,16 +270,7 @@ export async function ping(config: ServerConfig): Promise<PingResponse> {
 
 export async function getAlbumList(
 	config: ServerConfig,
-	type:
-		| 'newest'
-		| 'frequent'
-		| 'recent'
-		| 'random'
-		| 'alphabeticalByName'
-		| 'alphabeticalByArtist'
-		| 'starred'
-		| 'byYear'
-		| 'byGenre' = 'newest',
+	type: AlbumListType = 'newest',
 	size = 50,
 	offset = 0
 ): Promise<Album[]> {

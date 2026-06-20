@@ -1,12 +1,15 @@
 import { queryOptions } from '@tanstack/svelte-query';
-import { getAlbumList, getAlbum, searchAlbums, type Album, type AlbumDetail } from '$lib/subsonic';
+import {
+	getAlbumList,
+	getAlbum,
+	searchAlbums,
+	type Album,
+	type AlbumDetail,
+	type AlbumListType
+} from '$lib/subsonic';
 import { getActiveServer } from '$lib/server-store.svelte';
 
-export const albumsQuery = (
-	type: Parameters<typeof getAlbumList>[1] = 'newest',
-	size = 50,
-	offset = 0
-) =>
+export const albumsQuery = (type: AlbumListType = 'newest', size = 50, offset = 0) =>
 	queryOptions({
 		queryKey: ['albums', type, size, offset],
 		queryFn: async (): Promise<Album[]> => {
